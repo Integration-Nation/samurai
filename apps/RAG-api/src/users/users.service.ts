@@ -1,4 +1,4 @@
-import { Body, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { User } from './entities/user.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
