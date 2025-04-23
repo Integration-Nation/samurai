@@ -1,4 +1,5 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { Document } from 'src/document/entities/document.entity';
 
 //const isProd = process.env['NODE_ENV'] === 'production';
 import * as dotenv from 'dotenv';
@@ -13,7 +14,8 @@ export const TYPEORM_CONFIG = {
   password: process.env['POSTGRES_PASSWORD'],
   database: process.env['POSTGRES_DB'],
   synchronize: true,
-  entities: [User],
+  installExtensions: true,
+  entities: [User, Document],
   migrations: [__dirname + '/migrations/**/*{.ts,.js}'], // only with __dirname to apply migration
   migrationsTableName: 'migrations',
 } satisfies DataSourceOptions;
