@@ -1,10 +1,7 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import { Entity, Enum, PrimaryKey, Property } from '@mikro-orm/core';
+import { v4 } from 'uuid';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -13,31 +10,28 @@ export enum UserRole {
 }
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-  @Column()
+  @PrimaryKey()
+  uuid = v4();
+
+  @Property()
   name: string;
-  @Column({ unique: true })
+
+  @Property({ unique: true })
   email: string;
-  @Column()
+
+  @Property()
   password: string;
-  @Column({
-    type: 'enum',
-    enum: UserRole,
+
+  @Enum({
+    items: () => UserRole,
+    nativeEnumName: 'user_role',
     default: UserRole.MEMBER,
   })
   role: UserRole;
-  @Column()
-  @CreateDateColumn({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP(6)',
-  })
-  createdAt: Date;
-  @Column()
-  @UpdateDateColumn({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP(6)',
-    onUpdate: 'CURRENT_TIMESTAMP(6)',
-  })
-  updatedAt: Date;
+
+  @Property({ defaultRaw: 'now()' })
+  createdAt?: Date;
+
+  @Property({ onUpdate: () => 'now()', defaultRaw: 'now()' })
+  updatedAt?: Date;
 }
