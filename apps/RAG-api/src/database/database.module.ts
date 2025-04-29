@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { TYPEORM_CONFIG } from './typeorm.config';
+import MIKROORM_CONFIG from './mikro-orm.config';
+import { MikroOrmModule } from '@mikro-orm/nestjs';
 
 @Module({
-  imports: [TypeOrmModule.forRoot(TYPEORM_CONFIG)],
+  imports: [MikroOrmModule.forRoot(MIKROORM_CONFIG)],
   controllers: [],
   providers: [],
   exports: [],
