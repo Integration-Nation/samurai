@@ -47,6 +47,11 @@ She bend right back then we bool`;
   async testSimilarity(@Body() body: { prompt: string }) {
     const similarDocs =
       await this.documentService.retrieveSimilarDocumentChunks(body.prompt);
-    return this.documentService.rerankWithCohere(body.prompt, similarDocs, 5);
+    const rerankedResults = await this.documentService.rerankWithCohere(
+      body.prompt,
+      similarDocs,
+      5,
+    );
+    return this.documentService.generateResponse(body.prompt, rerankedResults);
   }
 }

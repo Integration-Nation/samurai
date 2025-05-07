@@ -5,7 +5,7 @@ import { Injectable } from '@nestjs/common';
 import { Document } from './entities/document.entity';
 import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { RagService } from 'src/rag/rag.service';
+import { CohereRerankChunk, RagService } from 'src/rag/rag.service';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import * as pdfParse from 'pdf-parse';
 import { DocumentChunk, Vector } from './entities/document-chunk.entity';
@@ -127,5 +127,12 @@ export class DocumentService {
     topN = 5,
   ) {
     return await this.ragService.rerankWithCohere(query, documentChunks, topN);
+  }
+
+  async generateResponse(
+    query: string,
+    documentChunks: CohereRerankChunk[],
+  ): Promise<string> {
+    return await this.ragService.generateResponse(query, documentChunks);
   }
 }
