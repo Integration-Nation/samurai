@@ -1,0 +1,26 @@
+{
+  "name": "@samurai/rag-backend-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "implicitDependencies": [
+      "@samurai/rag-backend"
+    ],
+    "targets": {
+      "e2e": {
+        "executor": "@nx/jest:jest",
+        "outputs": [
+          "{projectRoot}/test-output/jest/coverage"
+        ],
+        "options": {
+          "jestConfig": "apps/rag-backend-e2e/jest.config.ts",
+          "passWithNoTests": true
+        },
+        "dependsOn": [
+          "@samurai/rag-backend:build",
+          "@samurai/rag-backend:serve"
+        ]
+      }
+    }
+  }
+}

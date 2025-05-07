@@ -1,0 +1,90 @@
+import { Injectable } from '@nestjs/common';
+import OpenAI from 'openai';
+import { CohereClientV2 } from 'cohere-ai';
+import {
+  DocumentChunk,
+  Vector,
+} from '../document/entities/document-chunk.entity';
+
+export type CohereRerankChunk = {
+  index: number;
+  score: number;
+  text: string;
+};
+
+@Injectable()
+export class RagService {
+  private openai: OpenAI;
+  private readonly cohereClient: CohereClientV2;
+
+  constructor() {
+    this.openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    this.cohereClient = new CohereClientV2({
+      token: process.env.COHERE_API_KEY,
+    });
+  }
+
+  async getEmbedding(text: string): Promise<Vector> {
+    const response = await this.openai.embeddings.create({
+      model: 'text-embedding-3-small',
+      input: text,
+      encoding_format: 'float',
+    });
+
+    return response.data[0].embedding;
+  }
+
+  async rerankWithCohere(
+    query: string,
+    documentChunks: DocumentChunk[],
+    topN = 5
+  ): Promise<CohereRerankChunk[]> {
+    const docsForCohere = documentChunks.map((chunk) => chunk.content);
+
+    const rerankedResults = await this.cohereClient.rerank({
+      query,
+      documents: docsForCohere,
+      topN: topN,
+      model: 'rerank-v3.5',
+    });
+
+    const sortedChunks: CohereRerankChunk[] = rerankedResults.results.map(
+      (result) => ({
+        text: documentChunks[result.index].content,
+        score: result.relevanceScore,
+        index: result.index,
+      })
+    );
+
+    return sortedChunks;
+  }
+
+  async generateResponse(
+    prompt: string,
+    relevantChunks: CohereRerankChunk[]
+  ): Promise<string> {
+    const cleanContextText = relevantChunks
+      .map((doc) => doc.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
+      .join('\n\n');
+
+    const response = await this.openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'user', content: prompt },
+        {
+          role: 'system',
+          content: `You are a helpful assistant. Use the following context to answer the user's question. 
+                  If the context doesn't contain relevant information, acknowledge that and provide a 
+                  general response based on your knowledge. Repsond in the same language as the user prompt.
+                  
+                  Context:
+                  ${cleanContextText}`,
+        },
+      ],
+    });
+    return response.choices[0].message.content ?? 'No response from OpenAI';
+  }
+}
