@@ -6,7 +6,7 @@ import {
 } from 'src/document/entities/document-chunk.entity';
 import { CohereClientV2 } from 'cohere-ai';
 
-type CohereRerankChunk = {
+export type CohereRerankChunk = {
   index: number;
   score: number;
   text: string;
@@ -62,12 +62,27 @@ export class RagService {
     return sortedChunks;
   }
 
-  async generateAnswer(prompt: string): Promise<string> {
+  async generateResponse(
+    prompt: string,
+    relevantChunks: CohereRerankChunk[],
+  ): Promise<string> {
+    const cleanContextText = relevantChunks
+      .map((doc) => doc.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
+      .join('\n\n');
+
     const response = await this.openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         { role: 'user', content: prompt },
-        { role: 'system', content: 'You are a helpful assistant.' },
+        {
+          role: 'system',
+          content: `You are a helpful assistant. Use the following context to answer the user's question. 
+                  If the context doesn't contain relevant information, acknowledge that and provide a 
+                  general response based on your knowledge. Repsond in the same language as the user prompt.
+                  
+                  Context:
+                  ${cleanContextText}`,
+        },
       ],
     });
     return response.choices[0].message.content ?? 'No response from OpenAI';
