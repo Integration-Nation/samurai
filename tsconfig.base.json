@@ -6,8 +6,8 @@
     "importHelpers": true,
     "isolatedModules": true,
     "lib": ["es2022"],
-    "module": "esnext",
-    "moduleResolution": "bundler",
+    "module": "commonjs",           // Changed from esnext
+    "moduleResolution": "node",     // Changed from bundler
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
@@ -16,6 +16,9 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es2022",
+    "experimentalDecorators": true,     // Added
+    "emitDecoratorMetadata": true,      // Added
+    "useDefineForClassFields": false,   // Added - important for decorators
     "customConditions": ["development"]
   }
 }
