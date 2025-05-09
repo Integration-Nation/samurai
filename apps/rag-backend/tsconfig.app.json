@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "module": "Node16",
-    "types": ["node"],
+    "types": ["node", "express", "multer"],
     "rootDir": "src",
     "moduleResolution": "node16",
     "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo",

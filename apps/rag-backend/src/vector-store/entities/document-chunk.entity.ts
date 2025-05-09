@@ -1,12 +1,12 @@
 import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
 import { VectorType } from 'pgvector/mikro-orm';
-import { Document } from './document.entity';
+import { Document } from '../../documents/entities/document.entity';
 import { v4 } from 'uuid';
 
 export type Vector = number[];
 
 @Entity()
-export class DocumentChunk {
+export class DocumentVector {
   @PrimaryKey()
   uuid = v4();
 

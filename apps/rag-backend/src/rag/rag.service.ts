@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 import { CohereClientV2 } from 'cohere-ai';
+import { RerankingService } from '../reranking/reranking.service';
+import { EmbeddingsService } from '../embeddings/embeddings.service';
+import { VectorStoreService } from '../vector-store/vector-store.service';
 import {
-  DocumentChunk,
+  DocumentVector,
   Vector,
-} from '../document/entities/document-chunk.entity';
+} from '../vector-store/entities/document-chunk.entity';
 
 export type CohereRerankChunk = {
   index: number;
@@ -17,7 +20,11 @@ export class RagService {
   private openai: OpenAI;
   private readonly cohereClient: CohereClientV2;
 
-  constructor() {
+  constructor(
+    private readonly rerankingService: RerankingService,
+    private readonly embeddingsService: EmbeddingsService,
+    private readonly vectorStoreService: VectorStoreService
+  ) {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
@@ -35,31 +42,6 @@ export class RagService {
     });
 
     return response.data[0].embedding;
-  }
-
-  async rerankWithCohere(
-    query: string,
-    documentChunks: DocumentChunk[],
-    topN = 5
-  ): Promise<CohereRerankChunk[]> {
-    const docsForCohere = documentChunks.map((chunk) => chunk.content);
-
-    const rerankedResults = await this.cohereClient.rerank({
-      query,
-      documents: docsForCohere,
-      topN: topN,
-      model: 'rerank-v3.5',
-    });
-
-    const sortedChunks: CohereRerankChunk[] = rerankedResults.results.map(
-      (result) => ({
-        text: documentChunks[result.index].content,
-        score: result.relevanceScore,
-        index: result.index,
-      })
-    );
-
-    return sortedChunks;
   }
 
   async generateResponse(
@@ -86,5 +68,24 @@ export class RagService {
       ],
     });
     return response.choices[0].message.content ?? 'No response from OpenAI';
+  }
+  async query(prompt: string): Promise<string> {
+    const similarDocs = await this.retrieveSimilarDocumentChunks(prompt);
+    const rerankedResults = await this.rerankingService.rerankResults(
+      prompt,
+      similarDocs,
+      5
+    );
+    return this.generateResponse(prompt, rerankedResults);
+  }
+
+  async retrieveSimilarDocumentChunks(
+    query: string,
+    limit = 5
+  ): Promise<DocumentVector[]> {
+    const queryEmbedding = await this.embeddingsService.generateEmbedding(
+      query
+    );
+    return this.vectorStoreService.findSimilar(queryEmbedding, limit);
   }
 }

@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Document } from './entities/document.entity';
-import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
+import { EntityRepository } from '@mikro-orm/postgresql';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { CohereRerankChunk, RagService } from '../rag/rag.service';
+import { RagService } from '../rag/rag.service';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import pdfParse from 'pdf-parse';
-import { DocumentChunk, Vector } from './entities/document-chunk.entity';
-import { cosineDistance } from 'pgvector/mikro-orm';
+import {
+  DocumentVector,
+  Vector,
+} from '../vector-store/entities/document-chunk.entity';
 
 type PDFData = {
   text: string;
@@ -22,13 +24,12 @@ type PDFData = {
 };
 
 @Injectable()
-export class DocumentService {
+export class DocumentProcessorService {
   constructor(
     @InjectRepository(Document)
     private readonly documentRepository: EntityRepository<Document>,
-    @InjectRepository(DocumentChunk)
-    private readonly chunkRepository: EntityRepository<DocumentChunk>,
-    private readonly em: EntityManager,
+    @InjectRepository(DocumentVector)
+    private readonly vectorRepository: EntityRepository<DocumentVector>,
     private readonly ragService: RagService
   ) {}
 
@@ -84,52 +85,29 @@ export class DocumentService {
 
     for (const chunk of chunks) {
       const embedding = await this.generateEmbedding(chunk);
-      const documentChunk = new DocumentChunk();
-      documentChunk.content = chunk;
-      documentChunk.embedding = embedding;
-      documentChunk.document = document;
+      const documentVector = new DocumentVector();
+      documentVector.content = chunk;
+      documentVector.embedding = embedding;
+      documentVector.document = document;
 
-      this.chunkRepository.getEntityManager().persist(documentChunk);
+      this.vectorRepository.getEntityManager().persist(documentVector);
     }
 
-    await this.chunkRepository.getEntityManager().flush();
+    await this.vectorRepository.getEntityManager().flush();
   }
 
-  async findSimilar(
-    queryEmbedding: Vector,
-    limit = 5
-  ): Promise<DocumentChunk[]> {
-    const documentChunks = await this.em
-      .createQueryBuilder(DocumentChunk)
-      .orderBy({
-        [cosineDistance('embedding', queryEmbedding, this.em)]: 'ASC',
-      })
-      .limit(limit)
-      .getResult();
+  // async rerankWithCohere(
+  //   query: string,
+  //   documentChunks: DocumentChunk[],
+  //   topN = 5
+  // ) {
+  //   return await this.ragService.rerankResults(query, documentChunks, topN);
+  // }
 
-    return documentChunks;
-  }
-
-  async retrieveSimilarDocumentChunks(
-    query: string,
-    limit = 5
-  ): Promise<DocumentChunk[]> {
-    const queryEmbedding = await this.generateEmbedding(query);
-    return this.findSimilar(queryEmbedding, limit);
-  }
-
-  async rerankWithCohere(
-    query: string,
-    documentChunks: DocumentChunk[],
-    topN = 5
-  ) {
-    return await this.ragService.rerankWithCohere(query, documentChunks, topN);
-  }
-
-  async generateResponse(
-    query: string,
-    documentChunks: CohereRerankChunk[]
-  ): Promise<string> {
-    return await this.ragService.generateResponse(query, documentChunks);
-  }
+  // async generateResponse(
+  //   query: string,
+  //   documentChunks: CohereRerankChunk[]
+  // ): Promise<string> {
+  //   return await this.ragService.generateResponse(query, documentChunks);
+  // }
 }

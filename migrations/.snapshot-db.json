@@ -219,11 +219,11 @@
           "mappedType": "datetime"
         }
       },
-      "name": "document_chunk",
+      "name": "document_vector",
       "schema": "public",
       "indexes": [
         {
-          "keyName": "document_chunk_pkey",
+          "keyName": "document_vector_pkey",
           "columnNames": [
             "uuid"
           ],
@@ -235,12 +235,12 @@
       ],
       "checks": [],
       "foreignKeys": {
-        "document_chunk_document_uuid_foreign": {
-          "constraintName": "document_chunk_document_uuid_foreign",
+        "document_vector_document_uuid_foreign": {
+          "constraintName": "document_vector_document_uuid_foreign",
           "columnNames": [
             "document_uuid"
           ],
-          "localTableName": "public.document_chunk",
+          "localTableName": "public.document_vector",
           "referencedColumnNames": [
             "uuid"
           ],

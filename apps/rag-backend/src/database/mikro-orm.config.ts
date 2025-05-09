@@ -1,4 +1,4 @@
-import { Document } from '../document/entities/document.entity';
+import { Document } from '../documents/entities/document.entity';
 import * as dotenv from 'dotenv';
 import { MikroOrmModuleOptions } from '@mikro-orm/nestjs';
 import { User } from '../users/entities/user.entity';

@@ -7,7 +7,7 @@ import {
 } from '@mikro-orm/core';
 
 import { v4 } from 'uuid';
-import { DocumentChunk } from './document-chunk.entity';
+import { DocumentVector } from '../../vector-store/entities/document-chunk.entity';
 
 //* PDF DOCUMENTS
 @Entity()
@@ -42,8 +42,8 @@ export class Document {
   @Property({ nullable: true })
   modDate?: string;
 
-  @OneToMany(() => DocumentChunk, (chunk) => chunk.document)
-  chunks = new Collection<DocumentChunk>(this);
+  @OneToMany(() => DocumentVector, (chunk) => chunk.document)
+  chunks = new Collection<DocumentVector>(this);
 
   @Property({ defaultRaw: 'now()' })
   createdAt?: Date;
