@@ -46,23 +46,26 @@
         }
       },
       "migration:create": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "yarn mikro-orm migration:create --config apps/rag-backend/src/database/mikro-orm.config.ts"
-      }
-    },
-    "migration:up": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "yarn mikro-orm migration:up --config apps/rag-backend/src/database/mikro-orm.config.ts"
-      }
-    },
-    "migration:down": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "yarn mikro-orm migration:down --config apps/rag-backend/src/database/mikro-orm.config.ts"
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "yarn mikro-orm migration:create --config apps/rag-backend/src/database/mikro-orm.config.ts"
+        }
+      },
+      "migration:up": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "yarn mikro-orm migration:up --config apps/rag-backend/src/database/mikro-orm.config.ts"
+        }
+      },
+      "migration:down": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "yarn mikro-orm migration:down --config apps/rag-backend/src/database/mikro-orm.config.ts"
+        }
       }
     }
-    }
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1"
   }
 }
