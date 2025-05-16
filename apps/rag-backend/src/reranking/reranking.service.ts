@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DocumentVector } from '../vector-store/entities/document-chunk.entity';
+import { DocumentVector } from '../vector-store/entities/document-vector.entity';
 import { CohereRerankChunk } from '../rag/rag.service';
 import { CohereClientV2 } from 'cohere-ai';
 
@@ -16,7 +16,7 @@ export class RerankingService {
   async rerankResults(
     query: string,
     documentChunks: DocumentVector[],
-    topN = 5
+    topN = 15
   ): Promise<CohereRerankChunk[]> {
     const docsForCohere = documentChunks.map((chunk) => chunk.content);
 
@@ -32,6 +32,7 @@ export class RerankingService {
         text: documentChunks[result.index].content,
         score: result.relevanceScore,
         index: result.index,
+        type: documentChunks[result.index].type,
       })
     );
 

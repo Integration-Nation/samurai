@@ -7,7 +7,7 @@ import {
 } from '@mikro-orm/core';
 
 import { v4 } from 'uuid';
-import { DocumentVector } from '../../vector-store/entities/document-chunk.entity';
+import { DocumentVector } from '../../vector-store/entities/document-vector.entity';
 
 //* PDF DOCUMENTS
 @Entity()

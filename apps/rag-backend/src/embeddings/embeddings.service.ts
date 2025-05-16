@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CohereClientV2 } from 'cohere-ai';
 import OpenAI from 'openai';
-import { Vector } from '../vector-store/entities/document-chunk.entity';
+import { Vector } from '../vector-store/entities/document-vector.entity';
 
 @Injectable()
 export class EmbeddingsService {
@@ -18,13 +18,25 @@ export class EmbeddingsService {
     });
   }
 
-  async generateEmbedding(text: string): Promise<Vector> {
+  async generateTextEmbedding(textList: string[]): Promise<Vector[]> {
     const response = await this.openai.embeddings.create({
       model: 'text-embedding-3-small',
-      input: text,
+      input: textList,
       encoding_format: 'float',
     });
 
-    return response.data[0].embedding;
+    return response.data.map((d) => d.embedding);
+  }
+
+  async generateImageEmbeddings(base64Images: string[]): Promise<Vector> {
+    const response = await this.cohereClient.embed({
+      images: base64Images,
+      model: 'embed-v4.0',
+      inputType: 'image',
+      embeddingTypes: ['float'],
+      outputDimension: 1536,
+    });
+
+    return response.embeddings.float ? response.embeddings.float[0] : [];
   }
 }

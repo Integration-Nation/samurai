@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { cosineDistance } from 'pgvector/mikro-orm';
 import { EntityManager } from '@mikro-orm/postgresql';
-import { DocumentVector, Vector } from './entities/document-chunk.entity';
+import { DocumentVector, Vector } from './entities/document-vector.entity';
 
 @Injectable()
 export class VectorStoreService {
@@ -10,7 +10,7 @@ export class VectorStoreService {
 
   async findSimilar(
     queryEmbedding: Vector,
-    limit = 5
+    limit = 15
   ): Promise<DocumentVector[]> {
     const documentChunks = await this.em
       .createQueryBuilder(DocumentVector)

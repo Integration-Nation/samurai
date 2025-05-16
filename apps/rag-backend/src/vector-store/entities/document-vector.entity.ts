@@ -4,6 +4,10 @@ import { Document } from '../../documents/entities/document.entity';
 import { v4 } from 'uuid';
 
 export type Vector = number[];
+export enum DocumentVectorType {
+  TEXT = 'text',
+  IMAGE = 'image',
+}
 
 @Entity()
 export class DocumentVector {
@@ -18,6 +22,9 @@ export class DocumentVector {
 
   @ManyToOne(() => Document, { nullable: true })
   document?: Document;
+
+  @Property()
+  type!: DocumentVectorType;
 
   @Property({ defaultRaw: 'now()' })
   createdAt?: Date;

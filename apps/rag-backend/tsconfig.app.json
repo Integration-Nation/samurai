@@ -7,7 +7,9 @@
     "rootDir": "src",
     "moduleResolution": "node16",
     "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo",
-    "target": "es2021"
+    "target": "es2021",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": ["src/**/*.ts"],
   "exclude": [
