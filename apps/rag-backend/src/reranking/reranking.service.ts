@@ -15,25 +15,38 @@ export class RerankingService {
 
   async rerankResults(
     query: string,
-    documentChunks: DocumentVector[],
+    documentTextChunks: DocumentVector[],
+    documentImageChunks: DocumentVector[],
     topN = 15
   ): Promise<CohereRerankChunk[]> {
-    const docsForCohere = documentChunks.map((chunk) => chunk.content);
+    // Combine all document chunks into a single array with type info
+    const allChunks: DocumentVector[] = [
+      ...documentTextChunks.map((chunk) => ({ ...chunk })),
+      ...documentImageChunks.map((chunk) => ({ ...chunk })),
+    ];
 
+    // Extract contents for reranking
+    const docsForCohere = allChunks.map((chunk) => chunk.content);
+
+    // Call Cohere rerank API
     const rerankedResults = await this.cohereClient.rerank({
       query,
       documents: docsForCohere,
-      topN: topN,
+      topN,
       model: 'rerank-v3.5',
     });
 
+    // Map back to original chunks with type info
     const sortedChunks: CohereRerankChunk[] = rerankedResults.results.map(
-      (result) => ({
-        text: documentChunks[result.index].content,
-        score: result.relevanceScore,
-        index: result.index,
-        type: documentChunks[result.index].type,
-      })
+      (result) => {
+        const chunk = allChunks[result.index];
+        return {
+          text: chunk.content,
+          score: result.relevanceScore,
+          index: result.index,
+          type: chunk.type,
+        };
+      }
     );
 
     return sortedChunks;

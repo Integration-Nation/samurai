@@ -26,7 +26,7 @@ export const MIKROORM_CONFIG: MikroOrmModuleOptions = {
     transactional: true,
     disableForeignKeys: false,
     allOrNothing: true,
-    emit: 'ts', // use 'js' in production
+    emit: 'js', // use 'js' in production
   },
 };
 

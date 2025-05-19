@@ -1,5 +1,5 @@
 # Use Node.js slim image
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Install poppler-utils for pdfimages
 RUN apk add --no-cache poppler-utils
