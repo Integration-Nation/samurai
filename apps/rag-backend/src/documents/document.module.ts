@@ -6,10 +6,19 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { DocumentVector } from '../vector-store/entities/document-vector.entity';
 import { RagModule } from '../rag/rag.module';
 import { EmbeddingsModule } from '../embeddings/embeddings.module';
+import { PDFDocument } from './entities/pdf.entity';
+import { TXTDocument } from './entities/txt.entity';
+import { DOCXDocument } from './entities/docx.entity';
 
 @Module({
   imports: [
-    MikroOrmModule.forFeature([Document, DocumentVector]),
+    MikroOrmModule.forFeature([
+      Document,
+      DocumentVector,
+      PDFDocument,
+      TXTDocument,
+      DOCXDocument,
+    ]),
     RagModule,
     EmbeddingsModule,
   ],

@@ -4,6 +4,10 @@ import { MikroOrmModuleOptions } from '@mikro-orm/nestjs';
 import { User } from '../users/entities/user.entity';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { Migrator } from '@mikro-orm/migrations';
+import { PDFDocument } from '../documents/entities/pdf.entity';
+import { DocumentVector } from '../vector-store/entities/document-vector.entity';
+import { TXTDocument } from '../documents/entities/txt.entity';
+import { DOCXDocument } from '../documents/entities/docx.entity';
 
 //const isProd = process.env['NODE_ENV'] === 'production';
 
@@ -16,7 +20,14 @@ export const MIKROORM_CONFIG: MikroOrmModuleOptions = {
   user: process.env['POSTGRES_USER'],
   password: process.env['POSTGRES_PASSWORD'],
   dbName: process.env['POSTGRES_DB'],
-  entities: [User, Document],
+  entities: [
+    User,
+    Document,
+    PDFDocument,
+    DocumentVector,
+    TXTDocument,
+    DOCXDocument,
+  ],
   extensions: [Migrator],
   debug: true,
   migrations: {

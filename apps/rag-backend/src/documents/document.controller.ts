@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -19,36 +20,49 @@ export class DocumentController {
     return await this.documentProcessorService.findAll();
   }
 
-  @Post('upload')
+  @Post('upload/pdf')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    if (file.mimetype !== 'application/pdf') {
+      throw new BadRequestException(
+        'Invalid file type. Only .pdf files are allowed.'
+      );
+    }
+
     await this.documentProcessorService.processPdf(file);
   }
 
   @Post('upload/txt')
   @UseInterceptors(FileInterceptor('file'))
   async uploadTxt(@UploadedFile() file: Express.Multer.File) {
-    const content = file.buffer.toString('utf-8');
+    if (file.mimetype !== 'text/plain') {
+      throw new BadRequestException(
+        'Invalid file type. Only .txt files are allowed.'
+      );
+    }
 
-    // Example: parse each line
-    const lines = content.split('\n').map((line) => line.trim());
+    await this.documentProcessorService.processTxt(file);
 
     return {
-      originalName: file.originalname,
-      lineCount: lines.length,
-      lines,
+      file: file,
     };
   }
 
   @Post('upload/docx')
   @UseInterceptors(FileInterceptor('file'))
   async uploadDocx(@UploadedFile() file: Express.Multer.File) {
-    const result = await mammoth.extractRawText({ buffer: file.buffer });
-    const text = result.value; // Plain text content
+    if (
+      file.mimetype !==
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ) {
+      throw new BadRequestException(
+        'Invalid file type. Only .docx files are allowed.'
+      );
+    }
+
+    await this.documentProcessorService.processDOCX(file);
     return {
-      originalName: file.originalname,
-      wordCount: text.split(/\s+/).length,
-      content: text,
+      file: file,
     };
   }
 }
