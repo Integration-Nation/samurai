@@ -11,14 +11,18 @@ import { promisify } from 'util';
 
 import { tmpdir } from 'os';
 import { v4 as uuidv4 } from 'uuid';
-
+import mammoth from 'mammoth';
 import {
   DocumentVector,
   DocumentVectorType,
 } from '../vector-store/entities/document-vector.entity';
 import { EmbeddingsService } from '../embeddings/embeddings.service';
+import { PDFDocument } from './entities/pdf.entity';
+import { TXTDocument } from './entities/txt.entity';
+import { DOCXDocument } from './entities/docx.entity';
 
 type PDFData = {
+  fileName: string;
   text: string;
   numPages: number;
   title?: string;
@@ -30,6 +34,19 @@ type PDFData = {
   creationDate?: string;
   modDate?: string;
   images?: Uint8Array<ArrayBufferLike>[];
+};
+
+type TXTData = {
+  fileName: string;
+  lineCount: number;
+  text: string;
+};
+
+type DOCXData = {
+  fileName: string;
+  wordCount: number;
+  text: string;
+  images?: string[];
 };
 
 const execAsync = promisify(exec);
@@ -48,10 +65,34 @@ export class DocumentProcessorService {
     return this.documentRepository.findAll();
   }
 
-  async saveDocument(pdf: PDFData): Promise<Document> {
-    const document = this.documentRepository.create(pdf);
-    await this.documentRepository.getEntityManager().persistAndFlush(document);
-    return document;
+  async savePdfDocument(pdf: PDFData): Promise<PDFDocument> {
+    const pdfDocument = new PDFDocument(); // 👈 explicitly create subclass instance
+    Object.assign(pdfDocument, pdf); // ✅ assign data
+
+    await this.documentRepository
+      .getEntityManager()
+      .persistAndFlush(pdfDocument);
+    return pdfDocument;
+  }
+
+  async saveTxtDocument(txt: TXTData): Promise<TXTDocument> {
+    const txtDocument = new TXTDocument();
+    Object.assign(txtDocument, txt);
+
+    await this.documentRepository
+      .getEntityManager()
+      .persistAndFlush(txtDocument);
+    return txtDocument;
+  }
+
+  async saveDocxDocument(docx: DOCXData): Promise<DOCXDocument> {
+    const docxDocument = new DOCXDocument();
+    Object.assign(docxDocument, docx);
+
+    await this.documentRepository
+      .getEntityManager()
+      .persistAndFlush(docxDocument);
+    return docxDocument;
   }
 
   async readPDF(file: Express.Multer.File): Promise<PDFData> {
@@ -60,6 +101,7 @@ export class DocumentProcessorService {
     const pdf: PDFData = {
       text: pdfData.text,
       numPages: pdfData.numpages,
+      fileName: file.originalname,
       title: pdfData.info.Title,
       author: pdfData.info.Author,
       subject: pdfData.info.Subject,
@@ -75,13 +117,41 @@ export class DocumentProcessorService {
     return pdf;
   }
 
+  async readTXT(file: Express.Multer.File): Promise<TXTData> {
+    const content = file.buffer.toString('utf-8');
+
+    const lines = content.split('\n').map((line) => line.trim());
+
+    const txt: TXTData = {
+      fileName: file.originalname,
+      lineCount: lines.length,
+      text: content,
+    };
+
+    return txt;
+  }
+
+  async readDOCX(file: Express.Multer.File): Promise<DOCXData> {
+    const result = await mammoth.extractRawText({ buffer: file.buffer });
+    const text = result.value;
+
+    const docx: DOCXData = {
+      fileName: file.originalname,
+      wordCount: text.split(/\s+/).length,
+      text: text,
+      images: await this.extractDocxImages(file.buffer),
+    };
+
+    return docx;
+  }
+
   async processPdf(file: Express.Multer.File): Promise<void> {
     const pdfData = await this.readPDF(file);
 
     if (pdfData.text && pdfData.text.length > 100) {
       const text = pdfData.text;
 
-      const document = await this.saveDocument(pdfData);
+      const document = await this.savePdfDocument(pdfData);
 
       const splitter = new RecursiveCharacterTextSplitter({
         chunkSize: 1000,
@@ -101,12 +171,6 @@ export class DocumentProcessorService {
         documentVector.document = document;
         documentVector.type = DocumentVectorType.TEXT;
 
-        console.log(
-          `Persisting chunk ${i + 1} of ${chunks.length} for document ${
-            document.uuid
-          }`
-        );
-
         this.vectorRepository.getEntityManager().persist(documentVector);
       }
     }
@@ -116,7 +180,7 @@ export class DocumentProcessorService {
         (img) => `data:image/png;base64,${Buffer.from(img).toString('base64')}`
       );
 
-      const document = await this.saveDocument(pdfData);
+      const document = await this.savePdfDocument(pdfData);
       for (let i = 0; i < base64Images.length; i++) {
         const base64Image = base64Images[i];
         const imageEmbedding =
@@ -133,20 +197,86 @@ export class DocumentProcessorService {
         }
       }
     }
-    //save images
-    // if (pdfData.images) {
-    //   for (const image of pdfData.images) {
-    //     const embedding = await this.embeddingsService.generateEmbedding(
-    //       image.toString('base64')
-    //     );
-    //     const documentVector = new DocumentVector();
-    //     documentVector.content = image.toString('base64');
-    //     documentVector.embedding = embedding;
-    //     documentVector.document = document;
-    //     documentVector.type = DocumentVector.DocumentVectorType.IMAGE;
-    //     this.vectorRepository.getEntityManager().persist(documentVector);
-    //   }
-    // }
+
+    await this.vectorRepository.getEntityManager().flush();
+  }
+
+  async processTxt(file: Express.Multer.File): Promise<void> {
+    const txtData = await this.readTXT(file);
+    const document = await this.saveTxtDocument(txtData);
+    const splitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 1000,
+      chunkOverlap: 200,
+      separators: ['\n\n', '\n', '. ', ' ', ''],
+    });
+
+    const chunks = await splitter.splitText(txtData.text);
+    const embeddings = await this.embeddingsService.generateTextEmbeddings(
+      chunks
+    );
+    for (let i = 0; i < chunks.length; i++) {
+      const documentVector = new DocumentVector();
+      documentVector.content = chunks[i];
+      documentVector.embedding = embeddings[i];
+      documentVector.document = document;
+      documentVector.type = DocumentVectorType.TEXT;
+
+      this.vectorRepository.getEntityManager().persist(documentVector);
+    }
+    await this.vectorRepository.getEntityManager().flush();
+  }
+
+  async processDOCX(file: Express.Multer.File): Promise<void> {
+    const docxData = await this.readDOCX(file);
+
+    //ændr til smartere error handling for dokumenter som f.eks kun indeholder \n
+    if (docxData.text && docxData.text.length > 100) {
+      const text = docxData.text;
+
+      const document = await this.saveDocxDocument(docxData);
+
+      const splitter = new RecursiveCharacterTextSplitter({
+        chunkSize: 1000,
+        chunkOverlap: 200,
+        separators: ['\n\n', '\n', '. ', ' ', ''],
+      });
+
+      const chunks = await splitter.splitText(text);
+      const embeddings = await this.embeddingsService.generateTextEmbeddings(
+        chunks
+      );
+
+      for (let i = 0; i < chunks.length; i++) {
+        const documentVector = new DocumentVector();
+        documentVector.content = chunks[i];
+        documentVector.embedding = embeddings[i];
+        documentVector.document = document;
+        documentVector.type = DocumentVectorType.TEXT;
+
+        this.vectorRepository.getEntityManager().persist(documentVector);
+      }
+    }
+
+    if (docxData.images && docxData.images.length > 0) {
+      const base64Images = docxData.images;
+
+      const document = await this.saveDocxDocument(docxData);
+      for (let i = 0; i < base64Images.length; i++) {
+        const base64Image = base64Images[i];
+        const imageEmbedding =
+          await this.embeddingsService.generateImageEmbeddings([base64Image]);
+
+        if (imageEmbedding) {
+          const documentVector = new DocumentVector();
+          documentVector.content = base64Images[i];
+          documentVector.embedding = imageEmbedding;
+          documentVector.document = document;
+          documentVector.type = DocumentVectorType.IMAGE;
+
+          this.vectorRepository.getEntityManager().persist(documentVector);
+        }
+      }
+    }
 
     await this.vectorRepository.getEntityManager().flush();
   }
@@ -181,5 +311,26 @@ export class DocumentProcessorService {
     fs.rmSync(outputDir, { recursive: true, force: true });
 
     return images;
+  }
+
+  async extractDocxImages(fileBuffer: Buffer): Promise<string[]> {
+    const imagesBase64: string[] = [];
+
+    await mammoth.convertToHtml(
+      { buffer: fileBuffer },
+      {
+        convertImage: mammoth.images.imgElement(function (image) {
+          return image.read('base64').then((imageBuffer) => {
+            const base64Src = `data:${image.contentType};base64,${imageBuffer}`;
+            imagesBase64.push(base64Src);
+            return { src: base64Src };
+          });
+        }),
+      }
+    );
+
+    console.log('Docx images:', imagesBase64);
+
+    return imagesBase64;
   }
 }
