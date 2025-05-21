@@ -148,10 +148,10 @@ export class DocumentProcessorService {
   async processPdf(file: Express.Multer.File): Promise<void> {
     const pdfData = await this.readPDF(file);
 
+    const document = await this.savePdfDocument(pdfData);
+
     if (pdfData.text && pdfData.text.length > 100) {
       const text = pdfData.text;
-
-      const document = await this.savePdfDocument(pdfData);
 
       const splitter = new RecursiveCharacterTextSplitter({
         chunkSize: 1000,
@@ -180,7 +180,6 @@ export class DocumentProcessorService {
         (img) => `data:image/png;base64,${Buffer.from(img).toString('base64')}`
       );
 
-      const document = await this.savePdfDocument(pdfData);
       for (let i = 0; i < base64Images.length; i++) {
         const base64Image = base64Images[i];
         const imageEmbedding =
@@ -229,11 +228,11 @@ export class DocumentProcessorService {
   async processDOCX(file: Express.Multer.File): Promise<void> {
     const docxData = await this.readDOCX(file);
 
+    const document = await this.saveDocxDocument(docxData);
+
     //ændr til smartere error handling for dokumenter som f.eks kun indeholder \n
     if (docxData.text && docxData.text.length > 100) {
       const text = docxData.text;
-
-      const document = await this.saveDocxDocument(docxData);
 
       const splitter = new RecursiveCharacterTextSplitter({
         chunkSize: 1000,
@@ -260,7 +259,6 @@ export class DocumentProcessorService {
     if (docxData.images && docxData.images.length > 0) {
       const base64Images = docxData.images;
 
-      const document = await this.saveDocxDocument(docxData);
       for (let i = 0; i < base64Images.length; i++) {
         const base64Image = base64Images[i];
         const imageEmbedding =
