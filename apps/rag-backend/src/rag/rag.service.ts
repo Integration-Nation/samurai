@@ -50,17 +50,19 @@ export class RagService {
     const systemContent: any[] = [
       {
         type: 'text',
-        text: "You are a helpful assistant. Use the context below to answer the user's question.",
+        text: `You are a helpful assistant. Use the following context to answer the user's question. 
+                  If the context doesn't contain relevant information, acknowledge that and provide a 
+                  general response based on your knowledge. Repsond in the same language as the user prompt.
+                  
+                  Context:
+                  ${cleanContextText}`,
       },
-      { type: 'text', text: cleanContextText },
     ];
 
     if (imageBase64) {
       systemContent.push({
         type: 'image_url',
-        image_url: {
-          url: imageBase64,
-        },
+        image_url: { url: imageBase64 },
       });
     }
 
@@ -72,22 +74,29 @@ export class RagService {
       ],
     });
 
-    console.log(imageBase64);
-
     return response.choices[0].message.content ?? 'No response from OpenAI';
   }
 
   async query(prompt: string): Promise<string> {
-    const similarDocs = await this.retrieveSimilarDocumentChunks(prompt);
+    const similarTexts = await this.similaritySeachText(prompt);
+    const similarImages = await this.similaritySeachImages(prompt);
 
-    similarDocs.forEach((doc) => {
+    similarTexts.forEach((doc) => {
       console.log('Document Type:', doc.type);
     });
+
+    similarImages.forEach((doc) => {
+      console.log('Document Type:', doc.type);
+    });
+
     const rerankedResults = await this.rerankingService.rerankResults(
       prompt,
-      similarDocs,
+      similarTexts,
+      similarImages,
       15
     );
+
+    console.log('Reranked Results:', rerankedResults);
 
     const filteredTextResults = rerankedResults.filter(
       (result) => result.type === DocumentVectorType.TEXT
@@ -103,13 +112,31 @@ export class RagService {
     );
   }
 
-  async retrieveSimilarDocumentChunks(
+  async similaritySeachText(
     query: string,
-    limit = 15
+    limit = 10
   ): Promise<DocumentVector[]> {
-    const queryEmbedding = await this.embeddingsService.generateTextEmbedding([
+    const queryEmbedding = await this.embeddingsService.generateTextEmbeddings([
       query,
     ]);
-    return this.vectorStoreService.findSimilar(queryEmbedding[0], limit);
+    return this.vectorStoreService.findSimilar(
+      queryEmbedding[0],
+      limit,
+      DocumentVectorType.TEXT
+    );
+  }
+
+  async similaritySeachImages(
+    query: string,
+    limit = 5
+  ): Promise<DocumentVector[]> {
+    const queryEmbedding = await this.embeddingsService.generateQueryEmbedding(
+      query
+    );
+    return this.vectorStoreService.findSimilar(
+      queryEmbedding,
+      limit,
+      DocumentVectorType.IMAGE
+    );
   }
 }

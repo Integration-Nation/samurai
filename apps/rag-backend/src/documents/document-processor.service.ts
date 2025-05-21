@@ -77,34 +77,46 @@ export class DocumentProcessorService {
 
   async processPdf(file: Express.Multer.File): Promise<void> {
     const pdfData = await this.readPDF(file);
-    const text = pdfData.text;
 
-    const document = await this.saveDocument(pdfData);
+    if (pdfData.text && pdfData.text.length > 100) {
+      const text = pdfData.text;
 
-    const splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 1000,
-      chunkOverlap: 200,
-      separators: ['\n\n', '\n', '. ', ' ', ''],
-    });
+      const document = await this.saveDocument(pdfData);
 
-    const chunks = await splitter.splitText(text);
-    const embeddings = await this.embeddingsService.generateTextEmbedding(
-      chunks
-    );
+      const splitter = new RecursiveCharacterTextSplitter({
+        chunkSize: 1000,
+        chunkOverlap: 200,
+        separators: ['\n\n', '\n', '. ', ' ', ''],
+      });
 
-    for (let i = 0; i < chunks.length; i++) {
-      const documentVector = new DocumentVector();
-      documentVector.content = chunks[i];
-      documentVector.embedding = embeddings[i];
-      documentVector.document = document;
-      documentVector.type = DocumentVectorType.TEXT;
+      const chunks = await splitter.splitText(text);
+      const embeddings = await this.embeddingsService.generateTextEmbeddings(
+        chunks
+      );
 
-      this.vectorRepository.getEntityManager().persist(documentVector);
+      for (let i = 0; i < chunks.length; i++) {
+        const documentVector = new DocumentVector();
+        documentVector.content = chunks[i];
+        documentVector.embedding = embeddings[i];
+        documentVector.document = document;
+        documentVector.type = DocumentVectorType.TEXT;
+
+        console.log(
+          `Persisting chunk ${i + 1} of ${chunks.length} for document ${
+            document.uuid
+          }`
+        );
+
+        this.vectorRepository.getEntityManager().persist(documentVector);
+      }
     }
+
     if (pdfData.images && pdfData.images.length > 0) {
       const base64Images = pdfData.images.map(
         (img) => `data:image/png;base64,${Buffer.from(img).toString('base64')}`
       );
+
+      const document = await this.saveDocument(pdfData);
       for (let i = 0; i < base64Images.length; i++) {
         const base64Image = base64Images[i];
         const imageEmbedding =

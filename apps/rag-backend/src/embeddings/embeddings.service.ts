@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CohereClientV2 } from 'cohere-ai';
 import OpenAI from 'openai';
 import { Vector } from '../vector-store/entities/document-vector.entity';
+import { text } from 'stream/consumers';
 
 @Injectable()
 export class EmbeddingsService {
@@ -18,7 +19,7 @@ export class EmbeddingsService {
     });
   }
 
-  async generateTextEmbedding(textList: string[]): Promise<Vector[]> {
+  async generateTextEmbeddings(textList: string[]): Promise<Vector[]> {
     const response = await this.openai.embeddings.create({
       model: 'text-embedding-3-small',
       input: textList,
@@ -26,6 +27,30 @@ export class EmbeddingsService {
     });
 
     return response.data.map((d) => d.embedding);
+  }
+
+  async generateCohereTextEmbeddings(textList: string[]): Promise<Vector[]> {
+    const response = await this.cohereClient.embed({
+      texts: textList,
+      model: 'embed-v4.0',
+      inputType: 'search_document',
+      embeddingTypes: ['float'],
+      outputDimension: 1536,
+    });
+
+    return response.embeddings.float ?? [];
+  }
+
+  async generateQueryEmbedding(query: string): Promise<Vector> {
+    const response = await this.cohereClient.embed({
+      texts: [query],
+      model: 'embed-v4.0',
+      inputType: 'search_query',
+      embeddingTypes: ['float'],
+      outputDimension: 1536,
+    });
+
+    return response.embeddings.float ? response.embeddings.float[0] : [];
   }
 
   async generateImageEmbeddings(base64Images: string[]): Promise<Vector> {
