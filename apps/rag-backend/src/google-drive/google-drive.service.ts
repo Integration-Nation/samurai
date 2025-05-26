@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { google, drive_v3 } from 'googleapis';
-import { GoogleAuth } from 'google-auth-library';
+import { GoogleAuth, OAuth2Client } from 'google-auth-library';
 import { Readable } from 'stream';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -20,11 +20,13 @@ export interface DriveFileContent {
 }
 
 // Type guard functions
-function isValidFile(file: any): boolean {
-  return file && typeof file.id === 'string' && file.id.length > 0;
+function isValidFile(
+  file: drive_v3.Schema$File | null | undefined
+): file is drive_v3.Schema$File {
+  return Boolean(file && typeof file.id === 'string' && file.id.length > 0);
 }
 
-function sanitizeFileData(file: any): DriveFile {
+function sanitizeFileData(file: drive_v3.Schema$File): DriveFile {
   return {
     id: file.id || '',
     name: file.name || 'Unknown File',
@@ -36,15 +38,11 @@ function sanitizeFileData(file: any): DriveFile {
 }
 
 // Helper function to convert stream to buffer
-async function streamToBuffer(stream: any): Promise<Buffer> {
+async function streamToBuffer(stream: Readable): Promise<Buffer> {
   const chunks: Buffer[] = [];
 
-  if (!stream || typeof stream.on !== 'function') {
-    throw new Error('Invalid stream provided');
-  }
-
   return new Promise((resolve, reject) => {
-    stream.on('data', (chunk: any) => {
+    stream.on('data', (chunk: Buffer | string) => {
       chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     });
 
@@ -52,7 +50,7 @@ async function streamToBuffer(stream: any): Promise<Buffer> {
       resolve(Buffer.concat(chunks));
     });
 
-    stream.on('error', (error: any) => {
+    stream.on('error', (error: Error) => {
       reject(error);
     });
   });
@@ -104,11 +102,17 @@ export class GoogleDriveService {
   }
 
   // Set OAuth tokens (if using OAuth 2.0)
-  async setCredentials(tokens: any) {
+  async setCredentials(tokens: {
+    access_token?: string;
+    refresh_token?: string;
+    scope?: string;
+    token_type?: string;
+    expiry_date?: number;
+  }): Promise<void> {
     try {
       const authClient = await this.auth.getClient();
-      if ('setCredentials' in authClient) {
-        (authClient as any).setCredentials(tokens);
+      if (authClient instanceof OAuth2Client) {
+        authClient.setCredentials(tokens);
       }
     } catch (error) {
       this.logger.error('Failed to set credentials', error);
@@ -171,8 +175,8 @@ export class GoogleDriveService {
         { responseType: 'stream' }
       );
 
-      // Convert stream to buffer
-      const content = await streamToBuffer(contentResponse.data);
+      // Convert stream to buffer - the response.data should be a Readable stream
+      const content = await streamToBuffer(contentResponse.data as Readable);
 
       return {
         content,
@@ -202,7 +206,7 @@ export class GoogleDriveService {
         { responseType: 'stream' }
       );
 
-      return await streamToBuffer(response.data);
+      return await streamToBuffer(response.data as Readable);
     } catch (error) {
       this.logger.error(`Failed to export file ${fileId}`, error);
       throw error;
