@@ -1,9 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { google, drive_v3 } from 'googleapis';
-import { GoogleAuth, OAuth2Client } from 'google-auth-library';
+import { GoogleAuth, OAuth2Client} from 'google-auth-library';
 import { Readable } from 'stream';
-import * as fs from 'fs';
-import * as path from 'path';
 
 export interface DriveFile {
   id: string;
@@ -59,8 +57,8 @@ async function streamToBuffer(stream: Readable): Promise<Buffer> {
 @Injectable()
 export class GoogleDriveService {
   private readonly logger = new Logger(GoogleDriveService.name);
-  private drive: drive_v3.Drive;
-  private auth: GoogleAuth;
+  private drive!: drive_v3.Drive; // Use definite assignment assertion
+  private auth!: GoogleAuth; // Use definite assignment assertion
 
   constructor() {
     this.initializeGoogleDrive();
@@ -69,19 +67,16 @@ export class GoogleDriveService {
   private async initializeGoogleDrive() {
     try {
       // Initialize Google Auth
-      this.auth = new GoogleAuth({
-        keyFile: process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE,
-        scopes: [
-          'https://www.googleapis.com/auth/drive.readonly',
-          'https://www.googleapis.com/auth/drive.metadata.readonly',
-        ],
-      });
+     // More explicit approach
+    const auth = new google.auth.GoogleAuth({
+    keyFile: process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE,
+   scopes: [
+    'https://www.googleapis.com/auth/drive.readonly',
+    'https://www.googleapis.com/auth/drive.metadata.readonly',
+  ],
+});
 
-      // Initialize Drive API
-      this.drive = google.drive({
-        version: 'v3',
-        auth: this.auth,
-      });
+this.drive = google.drive({ version: 'v3', auth });
 
       // Test the connection
       await this.testConnection();
@@ -123,7 +118,7 @@ export class GoogleDriveService {
   // List files in Google Drive
   async listFiles(
     folderId?: string,
-    pageSize: number = 100,
+    pageSize = 100, // Remove explicit type annotation
     mimeType?: string
   ): Promise<DriveFile[]> {
     try {
@@ -216,7 +211,7 @@ export class GoogleDriveService {
   // Search files by query
   async searchFiles(
     query: string,
-    pageSize: number = 50
+    pageSize = 50 // Remove explicit type annotation
   ): Promise<DriveFile[]> {
     try {
       const response = await this.drive.files.list({
