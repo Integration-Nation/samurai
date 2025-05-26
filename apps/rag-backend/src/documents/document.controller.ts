@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { DocumentProcessorService } from './document-processor.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import mammoth from 'mammoth';
 
 @Controller('document')
 export class DocumentController {

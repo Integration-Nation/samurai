@@ -9,7 +9,6 @@ import {
   HttpStatus,
   Logger,
   StreamableFile,
-  
   Res,
 } from '@nestjs/common';
 import { GoogleDriveService, DriveFile } from './google-drive.service';
@@ -55,6 +54,12 @@ export class GoogleDriveController {
   /**
    * List files from Google Drive
    */
+
+  @Get('test-drive-files')
+  async testFiles() {
+    const files = await this.googleDriveService.listFiles();
+    return files;
+  }
   @Get('files')
   async listFiles(
     @Query('folderId') folderId?: string,
@@ -63,10 +68,16 @@ export class GoogleDriveController {
     @Query('processableOnly') processableOnly?: string
   ): Promise<ApiResponse<DriveFile[]>> {
     try {
-      this.logger.log(`Listing files - folderId: ${folderId}, pageSize: ${pageSize}, mimeType: ${mimeType}`);
-      
+      this.logger.log(
+        `Listing files - folderId: ${folderId}, pageSize: ${pageSize}, mimeType: ${mimeType}`
+      );
+
       const parsedPageSize = pageSize ? parseInt(pageSize, 10) : 100;
-      if (isNaN(parsedPageSize) || parsedPageSize < 1 || parsedPageSize > 1000) {
+      if (
+        isNaN(parsedPageSize) ||
+        parsedPageSize < 1 ||
+        parsedPageSize > 1000
+      ) {
         throw new HttpException(
           'Page size must be a number between 1 and 1000',
           HttpStatus.BAD_REQUEST
@@ -74,11 +85,15 @@ export class GoogleDriveController {
       }
 
       let files: DriveFile[];
-      
+
       if (processableOnly === 'true') {
         files = await this.googleDriveService.getProcessableFiles(folderId);
       } else {
-        files = await this.googleDriveService.listFiles(folderId, parsedPageSize, mimeType);
+        files = await this.googleDriveService.listFiles(
+          folderId,
+          parsedPageSize,
+          mimeType
+        );
       }
 
       return {
@@ -104,12 +119,12 @@ export class GoogleDriveController {
   ): Promise<ApiResponse<DriveFile[]>> {
     try {
       const files = await this.googleDriveService.getProcessableFiles(folderId);
-      
+
       return {
         success: true,
         data: files,
         count: files.length,
-        message: `Found ${files.length} processable files`
+        message: `Found ${files.length} processable files`,
       };
     } catch (error) {
       this.logger.error('Failed to get processable files', error);
@@ -137,14 +152,21 @@ export class GoogleDriveController {
       }
 
       const parsedPageSize = pageSize ? parseInt(pageSize, 10) : 50;
-      if (isNaN(parsedPageSize) || parsedPageSize < 1 || parsedPageSize > 1000) {
+      if (
+        isNaN(parsedPageSize) ||
+        parsedPageSize < 1 ||
+        parsedPageSize > 1000
+      ) {
         throw new HttpException(
           'Page size must be a number between 1 and 1000',
           HttpStatus.BAD_REQUEST
         );
       }
 
-      const files = await this.googleDriveService.searchFiles(query.trim(), parsedPageSize);
+      const files = await this.googleDriveService.searchFiles(
+        query.trim(),
+        parsedPageSize
+      );
 
       return {
         success: true,
@@ -155,7 +177,7 @@ export class GoogleDriveController {
     } catch (error) {
       this.logger.error('Failed to search files', error);
       throw new HttpException(
-         'Failed to search files in Google Drive',
+        'Failed to search files in Google Drive',
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -165,18 +187,24 @@ export class GoogleDriveController {
    * Get file metadata and content info
    */
   @Get('files/:fileId')
-  async getFileInfo(@Param('fileId') fileId: string): Promise<ApiResponse<{
-    metadata: DriveFile;
-    contentSize: number;
-    isProcessable: boolean;
-  }>> {
+  async getFileInfo(@Param('fileId') fileId: string): Promise<
+    ApiResponse<{
+      metadata: DriveFile;
+      contentSize: number;
+      isProcessable: boolean;
+    }>
+  > {
     try {
       if (!fileId || fileId.trim().length === 0) {
         throw new HttpException('File ID is required', HttpStatus.BAD_REQUEST);
       }
 
-      const fileContent = await this.googleDriveService.getFileContent(fileId.trim());
-      const isProcessable = this.googleDriveService.isProcessableFile(fileContent.metadata.mimeType);
+      const fileContent = await this.googleDriveService.getFileContent(
+        fileId.trim()
+      );
+      const isProcessable = this.googleDriveService.isProcessableFile(
+        fileContent.metadata.mimeType
+      );
 
       return {
         success: true,
@@ -188,8 +216,9 @@ export class GoogleDriveController {
       };
     } catch (error) {
       this.logger.error(`Failed to get file info for ${fileId}`, error);
+
       throw new HttpException(
-    'Failed to retrieve file from Google Drive',
+        'Failed to retrieve file from Google Drive',
         HttpStatus.NOT_FOUND
       );
     }
@@ -208,8 +237,10 @@ export class GoogleDriveController {
         throw new HttpException('File ID is required', HttpStatus.BAD_REQUEST);
       }
 
-      const fileContent = await this.googleDriveService.getFileContent(fileId.trim());
-      
+      const fileContent = await this.googleDriveService.getFileContent(
+        fileId.trim()
+      );
+
       // Set appropriate headers
       res.set({
         'Content-Type': fileContent.metadata.mimeType,
@@ -221,7 +252,7 @@ export class GoogleDriveController {
     } catch (error) {
       this.logger.error(`Failed to download file ${fileId}`, error);
       throw new HttpException(
-       'Failed to download file from Google Drive',
+        'Failed to download file from Google Drive',
         HttpStatus.NOT_FOUND
       );
     }
@@ -231,12 +262,14 @@ export class GoogleDriveController {
    * Export Google Workspace files to different formats
    */
   @Post('files/export')
-  async exportFile(@Body() body: ExportRequest): Promise<ApiResponse<{
-    fileId: string;
-    originalFormat: string;
-    exportedFormat: string;
-    size: number;
-  }>> {
+  async exportFile(@Body() body: ExportRequest): Promise<
+    ApiResponse<{
+      fileId: string;
+      originalFormat: string;
+      exportedFormat: string;
+      size: number;
+    }>
+  > {
     try {
       const { fileId, format } = body;
 
@@ -249,15 +282,22 @@ export class GoogleDriveController {
 
       // Get file metadata first to check if it's a Google Workspace file
       const fileContent = await this.googleDriveService.getFileContent(fileId);
-      
-      if (!fileContent.metadata.mimeType.startsWith('application/vnd.google-apps.')) {
+
+      if (
+        !fileContent.metadata.mimeType.startsWith(
+          'application/vnd.google-apps.document'
+        )
+      ) {
         throw new HttpException(
           'File is not a Google Workspace document and cannot be exported',
           HttpStatus.BAD_REQUEST
         );
       }
 
-      const exportedContent = await this.googleDriveService.exportFile(fileId, format);
+      const exportedContent = await this.googleDriveService.exportFile(
+        fileId,
+        format
+      );
 
       return {
         success: true,
@@ -267,7 +307,7 @@ export class GoogleDriveController {
           exportedFormat: format,
           size: exportedContent.length,
         },
-        message: 'File exported successfully'
+        message: 'File exported successfully',
       };
     } catch (error) {
       this.logger.error('Failed to export file', error);
@@ -282,22 +322,30 @@ export class GoogleDriveController {
    * Process a single file for RAG (extract text content)
    */
   @Post('files/:fileId/process')
-  async processFile(@Param('fileId') fileId: string): Promise<ApiResponse<{
-    fileId: string;
-    fileName: string;
-    contentPreview: string;
-    contentLength: number;
-    textExtracted: boolean;
-    chunks: string[];
-  }>> {
+  async processFile(@Param('fileId') fileId: string): Promise<
+    ApiResponse<{
+      fileId: string;
+      fileName: string;
+      contentPreview: string;
+      contentLength: number;
+      textExtracted: boolean;
+      chunks: string[];
+    }>
+  > {
     try {
       if (!fileId || fileId.trim().length === 0) {
         throw new HttpException('File ID is required', HttpStatus.BAD_REQUEST);
       }
 
-      const fileContent = await this.googleDriveService.getFileContent(fileId.trim());
-      
-      if (!this.googleDriveService.isProcessableFile(fileContent.metadata.mimeType)) {
+      const fileContent = await this.googleDriveService.getFileContent(
+        fileId.trim()
+      );
+
+      if (
+        !this.googleDriveService.isProcessableFile(
+          fileContent.metadata.mimeType
+        )
+      ) {
         throw new HttpException(
           `File type ${fileContent.metadata.mimeType} is not processable`,
           HttpStatus.BAD_REQUEST
@@ -306,7 +354,7 @@ export class GoogleDriveController {
 
       // Basic text extraction (you can enhance this based on file type)
       let textContent = '';
-      
+
       if (fileContent.metadata.mimeType === 'text/plain') {
         textContent = fileContent.content.toString('utf-8');
       } else if (fileContent.metadata.mimeType === 'application/json') {
@@ -324,17 +372,19 @@ export class GoogleDriveController {
         data: {
           fileId,
           fileName: fileContent.metadata.name,
-          contentPreview: textContent.substring(0, 500) + (textContent.length > 500 ? '...' : ''),
+          contentPreview:
+            textContent.substring(0, 500) +
+            (textContent.length > 500 ? '...' : ''),
           contentLength: textContent.length,
           textExtracted: true,
           chunks: chunks.slice(0, 5), // Return first 5 chunks as preview
         },
-        message: `File processed successfully. Generated ${chunks.length} chunks.`
+        message: `File processed successfully. Generated ${chunks.length} chunks.`,
       };
     } catch (error) {
       this.logger.error(`Failed to process file ${fileId}`, error);
       throw new HttpException(
-       'Failed to process file for RAG',
+        'Failed to process file for RAG',
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -370,13 +420,19 @@ export class GoogleDriveController {
 
       for (const fileId of fileIds) {
         try {
-          const fileContent = await this.googleDriveService.getFileContent(fileId);
-          
-          if (this.googleDriveService.isProcessableFile(fileContent.metadata.mimeType)) {
+          const fileContent = await this.googleDriveService.getFileContent(
+            fileId
+          );
+
+          if (
+            this.googleDriveService.isProcessableFile(
+              fileContent.metadata.mimeType
+            )
+          ) {
             // Simulate processing
             const textContent = fileContent.content.toString('utf-8');
             const chunks = this.chunkText(textContent);
-            
+
             results.push({
               fileId,
               fileName: fileContent.metadata.name,
@@ -418,12 +474,12 @@ export class GoogleDriveController {
           failed,
           results,
         },
-        message: `Batch processing completed. ${processed} processed, ${failed} failed.`
+        message: `Batch processing completed. ${processed} processed, ${failed} failed.`,
       };
     } catch (error) {
       this.logger.error('Failed to batch process files', error);
       throw new HttpException(
-      'Failed to batch process files',
+        'Failed to batch process files',
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -438,11 +494,16 @@ export class GoogleDriveController {
   ): Promise<ApiResponse<BatchProcessingResult>> {
     try {
       if (!folderId || folderId.trim().length === 0) {
-        throw new HttpException('Folder ID is required', HttpStatus.BAD_REQUEST);
+        throw new HttpException(
+          'Folder ID is required',
+          HttpStatus.BAD_REQUEST
+        );
       }
 
-      const files = await this.googleDriveService.getProcessableFiles(folderId.trim());
-      
+      const files = await this.googleDriveService.getProcessableFiles(
+        folderId.trim()
+      );
+
       if (files.length === 0) {
         return {
           success: true,
@@ -452,18 +513,18 @@ export class GoogleDriveController {
             failed: 0,
             results: [],
           },
-          message: 'No processable files found in folder'
+          message: 'No processable files found in folder',
         };
       }
 
-      const fileIds = files.map(file => file.id);
-      
+      const fileIds = files.map((file) => file.id);
+
       // Reuse the batch processing logic
       const response = await this.batchProcessFiles({ fileIds });
-      
+
       return {
         ...response,
-        message: `Folder processing completed. ${response.data?.processed} processed, ${response.data?.failed} failed.`
+        message: `Folder processing completed. ${response.data?.processed} processed, ${response.data?.failed} failed.`,
       };
     } catch (error) {
       this.logger.error(`Failed to process folder ${folderId}`, error);
@@ -478,18 +539,20 @@ export class GoogleDriveController {
    * Health check endpoint
    */
   @Get('health')
-  async healthCheck(): Promise<ApiResponse<{ status: string; timestamp: string }>> {
+  async healthCheck(): Promise<
+    ApiResponse<{ status: string; timestamp: string }>
+  > {
     try {
       // Test Google Drive connection
       await this.googleDriveService.listFiles(undefined, 1);
-      
+
       return {
         success: true,
         data: {
           status: 'healthy',
           timestamp: new Date().toISOString(),
         },
-        message: 'Google Drive service is operational'
+        message: 'Google Drive service is operational',
       };
     } catch (error) {
       this.logger.error('Health check failed', error);
@@ -513,12 +576,12 @@ export class GoogleDriveController {
 
     while (start < text.length) {
       let end = start + chunkSize;
-      
+
       // If we're not at the end of the text, try to break at a sentence or word boundary
       if (end < text.length) {
         const lastPeriod = text.lastIndexOf('.', end);
         const lastSpace = text.lastIndexOf(' ', end);
-        
+
         if (lastPeriod > start + chunkSize * 0.5) {
           end = lastPeriod + 1;
         } else if (lastSpace > start + chunkSize * 0.5) {
@@ -530,6 +593,6 @@ export class GoogleDriveController {
       start = end - overlap;
     }
 
-    return chunks.filter(chunk => chunk.length > 0);
+    return chunks.filter((chunk) => chunk.length > 0);
   }
 }
