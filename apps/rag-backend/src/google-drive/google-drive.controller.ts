@@ -13,7 +13,6 @@ import {
 } from '@nestjs/common';
 import { GoogleDriveService, DriveFile } from './google-drive.service';
 import type { Response } from 'express';
-import { log } from 'console';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -282,13 +281,11 @@ export class GoogleDriveController {
       }
 
       // Get file metadata first to check if it's a Google Workspace file
-      const fileContent = await this.googleDriveService.getFileContent(fileId);
-      console.log('filecontet', fileContent);
+      const metaData = await this.googleDriveService.getMetadata(fileId);
+      console.log('filecontet', metaData);
 
       if (
-        !fileContent.metadata.mimeType.startsWith(
-          'application/vnd.google-apps.document'
-        )
+        !metaData.mimeType.startsWith('application/vnd.google-apps.document')
       ) {
         throw new HttpException(
           'File is not a Google Workspace document and cannot be exported',
@@ -305,7 +302,7 @@ export class GoogleDriveController {
         success: true,
         data: {
           fileId,
-          originalFormat: fileContent.metadata.mimeType,
+          originalFormat: metaData.mimeType,
           exportedFormat: format,
           size: exportedContent.length,
         },
@@ -456,6 +453,7 @@ export class GoogleDriveController {
             failed++;
           }
         } catch (error) {
+          this.logger.error(`Failed to process file ${fileId}`, error);
           results.push({
             fileId,
             fileName: 'Unknown',

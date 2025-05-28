@@ -28,7 +28,10 @@ export class DocumentController {
       );
     }
 
-    await this.documentProcessorService.processPdf(file);
+    await this.documentProcessorService.processPdf(
+      file.buffer,
+      file.originalname
+    );
   }
 
   @Post('upload/txt')

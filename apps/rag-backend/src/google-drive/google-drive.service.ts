@@ -148,6 +148,21 @@ export class GoogleDriveService {
     }
   }
 
+  async getMetadata(fileId: string): Promise<DriveFile> {
+    const metadataResponse = await this.drive.files.get({
+      fileId,
+      fields: 'id,name,mimeType,size,modifiedTime,webViewLink',
+    });
+    console.log('File metadata:', metadataResponse);
+
+    const metadata = metadataResponse.data;
+    if (!metadata.id) {
+      throw new Error('File not found or inaccessible');
+    }
+    const sanitizedMetadata = sanitizeFileData(metadata);
+
+    return sanitizedMetadata;
+  }
   // Get file content
   async getFileContent(fileId: string): Promise<DriveFileContent> {
     try {
@@ -203,8 +218,10 @@ export class GoogleDriveService {
         },
         { responseType: 'stream' }
       );
+      const buffer = await streamToBuffer(response.data as Readable);
+      console.log('Exported file buffer:', buffer);
 
-      return await streamToBuffer(response.data as Readable);
+      return buffer;
     } catch (error) {
       this.logger.error(`Failed to export file ${fileId}`, error);
       throw error;
