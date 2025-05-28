@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { GoogleDriveService, DriveFile } from './google-drive.service';
 import type { Response } from 'express';
+import { log } from 'console';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -282,6 +283,7 @@ export class GoogleDriveController {
 
       // Get file metadata first to check if it's a Google Workspace file
       const fileContent = await this.googleDriveService.getFileContent(fileId);
+      console.log('filecontet', fileContent);
 
       if (
         !fileContent.metadata.mimeType.startsWith(

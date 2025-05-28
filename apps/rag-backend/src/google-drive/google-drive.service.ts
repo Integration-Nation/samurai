@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { google, drive_v3 } from 'googleapis';
-import { GoogleAuth, OAuth2Client} from 'google-auth-library';
+import { GoogleAuth, OAuth2Client } from 'google-auth-library';
 import { Readable } from 'stream';
+import { Console } from 'console';
 
 export interface DriveFile {
   id: string;
@@ -67,16 +68,16 @@ export class GoogleDriveService {
   private async initializeGoogleDrive() {
     try {
       // Initialize Google Auth
-     // More explicit approach
-    const auth = new google.auth.GoogleAuth({
-    keyFile: process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE,
-   scopes: [
-    'https://www.googleapis.com/auth/drive.readonly',
-    'https://www.googleapis.com/auth/drive.metadata.readonly',
-  ],
-});
+      // More explicit approach
+      const auth = new google.auth.GoogleAuth({
+        keyFile: process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE,
+        scopes: [
+          'https://www.googleapis.com/auth/drive.readonly',
+          'https://www.googleapis.com/auth/drive.metadata.readonly',
+        ],
+      });
 
-this.drive = google.drive({ version: 'v3', auth });
+      this.drive = google.drive({ version: 'v3', auth });
 
       // Test the connection
       await this.testConnection();
@@ -155,6 +156,7 @@ this.drive = google.drive({ version: 'v3', auth });
         fileId,
         fields: 'id,name,mimeType,size,modifiedTime,webViewLink',
       });
+      console.log('File metadata:', metadataResponse);
 
       const metadata = metadataResponse.data;
       if (!metadata.id) {
@@ -169,6 +171,7 @@ this.drive = google.drive({ version: 'v3', auth });
         },
         { responseType: 'stream' }
       );
+      console.log('File content response:', contentResponse);
 
       // Convert stream to buffer - the response.data should be a Readable stream
       const content = await streamToBuffer(contentResponse.data as Readable);
@@ -217,8 +220,6 @@ this.drive = google.drive({ version: 'v3', auth });
       const response = await this.drive.files.list({
         q: `name contains '${query}' and trashed=false`,
         pageSize,
-        fields: 'files(id,name,mimeType,size,modifiedTime,webViewLink)',
-        orderBy: 'relevance desc',
       });
 
       const files = response.data.files || [];
