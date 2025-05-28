@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { google, drive_v3 } from 'googleapis';
 import { GoogleAuth, OAuth2Client } from 'google-auth-library';
 import { Readable } from 'stream';
-import { Console } from 'console';
 
 export interface DriveFile {
   id: string;
@@ -171,7 +170,6 @@ export class GoogleDriveService {
         fileId,
         fields: 'id,name,mimeType,size,modifiedTime,webViewLink',
       });
-      console.log('File metadata:', metadataResponse);
 
       const metadata = metadataResponse.data;
       if (!metadata.id) {
@@ -186,10 +184,11 @@ export class GoogleDriveService {
         },
         { responseType: 'stream' }
       );
-      console.log('File content response:', contentResponse);
 
       // Convert stream to buffer - the response.data should be a Readable stream
       const content = await streamToBuffer(contentResponse.data as Readable);
+
+      console.log('content', content);
 
       return {
         content,

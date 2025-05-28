@@ -24,5 +24,6 @@ import { DOCXDocument } from './entities/docx.entity';
   ],
   controllers: [DocumentController],
   providers: [DocumentProcessorService],
+  exports: [DocumentProcessorService],
 })
 export class DocumentModule {}

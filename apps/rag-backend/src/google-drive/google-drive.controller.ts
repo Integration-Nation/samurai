@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { GoogleDriveService, DriveFile } from './google-drive.service';
 import type { Response } from 'express';
+import { DocumentProcessorService } from '../documents/document-processor.service';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -45,21 +46,101 @@ interface ExportRequest {
   format: string;
 }
 
+interface DownloadRequest {
+  fileId: string;
+}
+
 @Controller('google-drive')
 export class GoogleDriveController {
   private readonly logger = new Logger(GoogleDriveController.name);
 
-  constructor(private readonly googleDriveService: GoogleDriveService) {}
+  constructor(
+    private readonly googleDriveService: GoogleDriveService,
+    private readonly documentProcessorService: DocumentProcessorService
+  ) {}
 
   /**
    * List files from Google Drive
    */
 
-  @Get('test-drive-files')
-  async testFiles() {
-    const files = await this.googleDriveService.listFiles();
-    return files;
+  @Post('files/ulpoad/docs')
+  async uploadDocsToRag(@Body() body: ExportRequest): Promise<
+    ApiResponse<{
+      fileId: string;
+      originalFormat: string;
+      exportedFormat: string;
+      size: number;
+    }>
+  > {
+    try {
+      const { fileId, format } = body;
+
+      if (!fileId || !format) {
+        throw new HttpException(
+          'File ID and format are required',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      const metaData = await this.googleDriveService.getMetadata(fileId);
+      console.log('filecontet', metaData);
+
+      if (
+        !metaData.mimeType.startsWith('application/vnd.google-apps.document')
+      ) {
+        throw new HttpException(
+          'File is not a Google Workspace document and cannot be exported',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      const exportedBuffer = await this.googleDriveService.exportFile(
+        fileId,
+        format
+      );
+
+      this.documentProcessorService.processPdf(exportedBuffer, metaData.name);
+
+      return {
+        success: true,
+        message: 'File processed successfully',
+      };
+    } catch (error) {
+      this.logger.error('Failed to export file', error);
+      throw new HttpException(
+        'Failed to export file',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
+
+  @Post('files/upload/pdf')
+  async uploadPdfToRag(@Body() body: DownloadRequest): Promise<StreamableFile> {
+    const { fileId } = body;
+    try {
+      if (!fileId || fileId.trim().length === 0) {
+        throw new HttpException('File ID is required', HttpStatus.BAD_REQUEST);
+      }
+
+      const fileContent = await this.googleDriveService.getFileContent(
+        fileId.trim()
+      );
+
+      await this.documentProcessorService.processPdf(
+        fileContent.content,
+        fileContent.metadata.name
+      );
+
+      return new StreamableFile(fileContent.content);
+    } catch (error) {
+      this.logger.error(`Failed to download file ${fileId}`, error);
+      throw new HttpException(
+        'Failed to download file from Google Drive',
+        HttpStatus.NOT_FOUND
+      );
+    }
+  }
+
   @Get('files')
   async listFiles(
     @Query('folderId') folderId?: string,
