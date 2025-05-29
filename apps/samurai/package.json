@@ -15,7 +15,15 @@
         "executor": "@nx/next:server",
         "options": {
           "buildTarget": "samurai:build",
-          "dev": true
+          "dev": true,
+          "port": 4200,
+          "hostname": "localhost"
+        },
+        "configurations": {
+          "production": {
+            "dev": false,
+            "buildTarget": "samurai:build:production"
+          }
         }
       }
     }
