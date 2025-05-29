@@ -9,6 +9,7 @@ import { RagModule } from '../rag/rag.module';
 import { VectorStoreModule } from '../vector-store/vector-store.module';
 import { RerankingModule } from '../reranking/reranking.module';
 import { EmbeddingsModule } from '../embeddings/embeddings.module';
+import { GoogleDriveModule } from '../google-drive/google-drive.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { EmbeddingsModule } from '../embeddings/embeddings.module';
     VectorStoreModule,
     RerankingModule,
     EmbeddingsModule,
+    GoogleDriveModule,
   ],
   controllers: [AppController],
   providers: [AppService, RagService],

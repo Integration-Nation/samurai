@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { DocumentProcessorService } from './document-processor.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import mammoth from 'mammoth';
 
 @Controller('document')
 export class DocumentController {
@@ -29,7 +28,10 @@ export class DocumentController {
       );
     }
 
-    await this.documentProcessorService.processPdf(file);
+    await this.documentProcessorService.processPdf(
+      file.buffer,
+      file.originalname
+    );
   }
 
   @Post('upload/txt')

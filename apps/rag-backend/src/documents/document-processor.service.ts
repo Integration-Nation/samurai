@@ -95,13 +95,13 @@ export class DocumentProcessorService {
     return docxDocument;
   }
 
-  async readPDF(file: Express.Multer.File): Promise<PDFData> {
-    const pdfData = await pdfParse(file.buffer);
+  async readPDF(fileBuffer: Buffer, fileName: string): Promise<PDFData> {
+    const pdfData = await pdfParse(fileBuffer);
 
     const pdf: PDFData = {
       text: pdfData.text,
       numPages: pdfData.numpages,
-      fileName: file.originalname,
+      fileName: fileName,
       title: pdfData.info.Title,
       author: pdfData.info.Author,
       subject: pdfData.info.Subject,
@@ -110,7 +110,7 @@ export class DocumentProcessorService {
       producer: pdfData.info.Producer,
       creationDate: pdfData.info.CreationDate,
       modDate: pdfData.info.ModDate,
-      images: await this.extractImagesViaPdfimages(file.buffer),
+      images: await this.extractImagesViaPdfimages(fileBuffer),
     };
 
     console.log('PDF data:', pdf);
@@ -145,8 +145,8 @@ export class DocumentProcessorService {
     return docx;
   }
 
-  async processPdf(file: Express.Multer.File): Promise<void> {
-    const pdfData = await this.readPDF(file);
+  async processPdf(fileBuffer: Buffer, fileName: string): Promise<void> {
+    const pdfData = await this.readPDF(fileBuffer, fileName);
 
     const document = await this.savePdfDocument(pdfData);
 
