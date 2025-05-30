@@ -63,7 +63,7 @@ export class GoogleDriveController {
    * List files from Google Drive
    */
 
-  @Post('files/ulpoad/docs')
+  @Post('files/upload/docs')
   async uploadDocsToRag(@Body() body: ExportRequest): Promise<
     ApiResponse<{
       fileId: string;
