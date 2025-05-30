@@ -1,4 +1,6 @@
+import { ThemeProvider } from '@/components/theme-provider';
 import './global.css';
+import {NavigationMenuBar}from '@/components/nav-bar';
 
 export const metadata = {
   title: 'Welcome to samurai',
@@ -11,8 +13,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body>
+      <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <NavigationMenuBar />
+            {children}
+          </ThemeProvider>
+      </body>
     </html>
   );
 }
