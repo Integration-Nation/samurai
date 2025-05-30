@@ -197,17 +197,7 @@
       ],
       "checks": [],
       "foreignKeys": {},
-      "nativeEnums": {
-        "user_role": {
-          "name": "user_role",
-          "schema": "public",
-          "items": [
-            "admin",
-            "member",
-            "guest"
-          ]
-        }
-      }
+      "nativeEnums": {}
     },
     {
       "columns": {
@@ -312,22 +302,12 @@
           "updateRule": "cascade"
         }
       },
-      "nativeEnums": {
-        "user_role": {
-          "name": "user_role",
-          "schema": "public",
-          "items": [
-            "admin",
-            "member",
-            "guest"
-          ]
-        }
-      }
+      "nativeEnums": {}
     },
     {
       "columns": {
-        "uuid": {
-          "name": "uuid",
+        "id": {
+          "name": "id",
           "type": "varchar(255)",
           "unsigned": false,
           "autoincrement": false,
@@ -346,6 +326,16 @@
           "length": 255,
           "mappedType": "string"
         },
+        "username": {
+          "name": "username",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "mappedType": "string"
+        },
         "email": {
           "name": "email",
           "type": "varchar(255)",
@@ -355,32 +345,6 @@
           "nullable": false,
           "length": 255,
           "mappedType": "string"
-        },
-        "password": {
-          "name": "password",
-          "type": "varchar(255)",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "length": 255,
-          "mappedType": "string"
-        },
-        "role": {
-          "name": "role",
-          "type": "user_role",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "nativeEnumName": "user_role",
-          "default": "'member'",
-          "enumItems": [
-            "admin",
-            "member",
-            "guest"
-          ],
-          "mappedType": "enum"
         },
         "created_at": {
           "name": "created_at",
@@ -421,7 +385,7 @@
         {
           "keyName": "user_pkey",
           "columnNames": [
-            "uuid"
+            "id"
           ],
           "composite": false,
           "constraint": true,
@@ -431,28 +395,8 @@
       ],
       "checks": [],
       "foreignKeys": {},
-      "nativeEnums": {
-        "user_role": {
-          "name": "user_role",
-          "schema": "public",
-          "items": [
-            "admin",
-            "member",
-            "guest"
-          ]
-        }
-      }
+      "nativeEnums": {}
     }
   ],
-  "nativeEnums": {
-    "user_role": {
-      "name": "user_role",
-      "schema": "public",
-      "items": [
-        "admin",
-        "member",
-        "guest"
-      ]
-    }
-  }
+  "nativeEnums": {}
 }
