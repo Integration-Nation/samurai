@@ -1,5 +1,6 @@
 import { ThemeProvider } from '@/components/theme-provider';
 import './global.css';
+import {NavigationMenuBar}from '@/components/nav-bar';
 
 export const metadata = {
   title: 'Welcome to samurai',
@@ -20,6 +21,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+            <NavigationMenuBar />
             {children}
           </ThemeProvider>
       </body>
