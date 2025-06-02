@@ -9,6 +9,7 @@ import {
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { GoogleOauthGuard } from './guards/google-oauth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 interface GoogleUser {
   email: string;
@@ -48,5 +49,11 @@ export class AuthController {
     });
 
     return res.redirect('http://localhost:4200/chat');
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard) // Or whatever guard validates your cookie
+  async getProfile(@Req() req: Request) {
+    return req.user;
   }
 }

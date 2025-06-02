@@ -1,6 +1,7 @@
 import { ThemeProvider } from '@/components/theme-provider';
 import './global.css';
 import {NavigationMenuBar}from '@/components/nav-bar';
+import { AuthProvider } from '@/components/AuthProvider';
 
 export const metadata = {
   title: 'Welcome to samurai',
@@ -15,16 +16,20 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-      <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <NavigationMenuBar />
-            {children}
-          </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                <NavigationMenuBar />
+                {children}
+              </ThemeProvider>
+          </AuthProvider>
       </body>
     </html>
   );
 }
+
+
