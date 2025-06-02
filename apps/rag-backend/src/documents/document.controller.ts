@@ -32,6 +32,10 @@ export class DocumentController {
       file.buffer,
       file.originalname
     );
+
+    return {
+      file: file,
+    };
   }
 
   @Post('upload/txt')

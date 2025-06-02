@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/navigation-menu"
 import { ModeToggle } from "./mode-toggle"
 import { GalleryVerticalEnd } from "lucide-react"
+import Image from "next/image"
+import { useTheme } from "next-themes"
 
 const components: { title: string; href: string; description: string }[] = [
   {
@@ -56,15 +58,18 @@ const components: { title: string; href: string; description: string }[] = [
 ]
 
 export function NavigationMenuBar() {
+
+    const { resolvedTheme } = useTheme()
+
   return (
 <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-2 bg-transparent">
 
     <NavigationMenu>
     <div className="flex justify-center gap-2 md:justify-start mr-4">
-              <a href="#" className="flex items-center gap-2 font-medium">
-                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                  <GalleryVerticalEnd className="size-4" />
-                </div>
+              <a href="#" className="flex items-center gap-1 font-medium">
+                  { resolvedTheme === "dark" ?  <img className="size-12" src="samur-logo-dark.png" />
+                  : <img className="size-12" src="samur-logo.png" />
+                  }
                 SAMUR.AI
               </a>
             </div>
