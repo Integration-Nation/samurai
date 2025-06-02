@@ -4,7 +4,6 @@ import { AppService } from './app.service';
 import { UsersModule } from '../users/users.module';
 import { DatabaseModule } from '../database/database.module';
 import { DocumentModule } from '../documents/document.module';
-import { RagService } from '../rag/rag.service';
 import { RagModule } from '../rag/rag.module';
 import { VectorStoreModule } from '../vector-store/vector-store.module';
 import { RerankingModule } from '../reranking/reranking.module';
@@ -38,6 +37,6 @@ import { AuthModule } from '../auth/auth.module';
     GoogleDriveModule,
   ],
   controllers: [AppController],
-  providers: [AppService, RagService],
+  providers: [AppService],
 })
 export class AppModule {}

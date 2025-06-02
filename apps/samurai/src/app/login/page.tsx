@@ -1,8 +1,4 @@
-import { GalleryVerticalEnd } from "lucide-react"
-
 import  LoginForm  from "@/components/login-form"
-import { ModeToggle } from "@/components/mode-toggle"
-
 
 export default function LoginPage() {
   return (
@@ -20,12 +16,6 @@ export default function LoginPage() {
           alt="Image"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.6] dark:grayscale"
         />
-            {/* <Image
-          src="/monty-mole.gif"
-             alt="Profile photo"
-             width={500}
-                height={500}
-             /> */}
       </div>
     </div>
   )
