@@ -24,23 +24,6 @@ interface ApiResponse<T> {
   error?: string;
 }
 
-interface FileProcessingResult {
-  fileId: string;
-  fileName: string;
-  mimeType: string;
-  size: number;
-  processed: boolean;
-  chunks?: number;
-  error?: string;
-}
-
-interface BatchProcessingResult {
-  totalFiles: number;
-  processed: number;
-  failed: number;
-  results: FileProcessingResult[];
-}
-
 interface ExportRequest {
   fileId: string;
   format: string;

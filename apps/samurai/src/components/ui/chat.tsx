@@ -17,6 +17,7 @@ import { CopyButton } from "@/components/ui/copy-button"
 import { MessageInput } from "@/components/ui/message-input"
 import { MessageList } from "@/components/ui/message-list"
 import { PromptSuggestions } from "@/components/ui/prompt-suggestions"
+import { UploadDocumentsModal } from "../document-uploader"
 
 interface ChatPropsBase {
   handleSubmit: (
@@ -36,6 +37,10 @@ interface ChatPropsBase {
   ) => void
   setMessages?: (messages: any[]) => void
   transcribeAudio?: (blob: Blob) => Promise<string>
+  uploadedDocs: File[]
+  setUploadedDocs: (files: File[]) => void
+  isUploadModalOpen: boolean
+  setIsUploadModalOpen: (open: boolean) => void
 }
 
 interface ChatPropsWithoutSuggestions extends ChatPropsBase {
@@ -64,6 +69,10 @@ export function Chat({
   onRateResponse,
   setMessages,
   transcribeAudio,
+  uploadedDocs,
+  setUploadedDocs,
+  isUploadModalOpen,
+  setIsUploadModalOpen,
 }: ChatProps) {
   const lastMessage = messages.at(-1)
   const isEmpty = messages.length === 0
@@ -215,7 +224,24 @@ export function Chat({
         </ChatMessages>
       ) : null}
 
-      <ChatForm
+<button
+        onClick={() => setIsUploadModalOpen(true)}
+        className="rounded-xl border bg-background px-4 py-2 text-sm hover:bg-muted"
+      >
+        Upload Documents
+      </button>
+
+      <UploadDocumentsModal
+        open={isUploadModalOpen}
+        setOpen={setIsUploadModalOpen}
+        uploadedDocs={uploadedDocs}
+        setUploadedDocs={setUploadedDocs}
+      />
+
+<br />
+
+   <ChatForm
+        //* className = {uploadedDocs.length<=0 ? "mt-auto cursor-not-allowed pointer-events-none opacity-35" : "mt-auto"}
         className="mt-auto"
         isPending={isGenerating || isTyping}
         handleSubmit={handleSubmit}
