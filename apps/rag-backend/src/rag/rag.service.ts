@@ -7,6 +7,11 @@ import {
   DocumentVector,
   DocumentVectorType,
 } from '../vector-store/entities/document-vector.entity';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityRepository } from '@mikro-orm/postgresql';
+import { Conversation } from './entities/conversation.entity';
+import { Message } from './entities/message.entity';
+import { User } from '../users/entities/user.entity';
 
 export type CohereRerankChunk = {
   index: number;
@@ -30,7 +35,13 @@ export class RagService {
   constructor(
     private readonly rerankingService: RerankingService,
     private readonly embeddingsService: EmbeddingsService,
-    private readonly vectorStoreService: VectorStoreService
+    private readonly vectorStoreService: VectorStoreService,
+    @InjectRepository(Conversation)
+    private conversationRepo: EntityRepository<Conversation>,
+    @InjectRepository(Message)
+    private messageRepo: EntityRepository<Message>,
+    @InjectRepository(User)
+    private userRepo: EntityRepository<User>
   ) {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
@@ -232,5 +243,168 @@ export class RagService {
       limit,
       DocumentVectorType.IMAGE
     );
+  }
+
+  // Updated methods with user context
+  async getAllConversations(userId: string) {
+    return this.conversationRepo.find(
+      { user: userId },
+      {
+        populate: ['messages'],
+        orderBy: { createdAt: 'desc' },
+      }
+    );
+  }
+
+  async getMessagesForConversation(conversationId: string, userId: string) {
+    // First verify the conversation belongs to the user
+    const conversation = await this.conversationRepo.findOne({
+      id: conversationId,
+      user: userId,
+    });
+
+    if (!conversation) {
+      throw new Error('Conversation not found or access denied');
+    }
+
+    const messages = await this.messageRepo.find(
+      {
+        conversation: conversationId,
+        user: userId,
+      },
+      { orderBy: { createdAt: 'asc' } }
+    );
+    return messages;
+  }
+
+  async createNewConversation(userId: string): Promise<string> {
+    const user = await this.userRepo.findOne(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const conversation = new Conversation();
+    conversation.user = user;
+
+    await this.conversationRepo
+      .getEntityManager()
+      .persistAndFlush(conversation);
+    return conversation.id;
+  }
+
+  async deleteConversation(
+    conversationId: string,
+    userId: string
+  ): Promise<void> {
+    const conversation = await this.conversationRepo.findOne(
+      {
+        id: conversationId,
+        user: userId,
+      },
+      { populate: ['messages'] }
+    );
+
+    if (!conversation) {
+      throw new Error('Conversation not found or access denied');
+    }
+
+    // Delete all messages first
+    if (conversation.messages && conversation.messages.length > 0) {
+      await this.messageRepo
+        .getEntityManager()
+        .removeAndFlush(conversation.messages);
+    }
+
+    // Then delete the conversation
+    await this.conversationRepo.getEntityManager().removeAndFlush(conversation);
+  }
+
+  async updateConversationTitle(
+    conversationId: string,
+    title: string,
+    userId: string
+  ): Promise<void> {
+    const conversation = await this.conversationRepo.findOne({
+      id: conversationId,
+      user: userId,
+    });
+
+    if (!conversation) {
+      throw new Error('Conversation not found or access denied');
+    }
+
+    conversation.title = title;
+    await this.conversationRepo
+      .getEntityManager()
+      .persistAndFlush(conversation);
+  }
+
+  // Enhanced saveMessage method with user context
+  async saveMessage(
+    conversationId: string | undefined,
+    role: Message['role'],
+    content: string,
+    userId: string
+  ): Promise<string> {
+    const user = await this.userRepo.findOne(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    let conversation: Conversation;
+
+    if (conversationId) {
+      const existingConversation = await this.conversationRepo.findOne({
+        id: conversationId,
+        user: userId,
+      });
+
+      if (existingConversation) {
+        conversation = existingConversation;
+      } else {
+        // If conversation doesn't exist or doesn't belong to user, create a new one
+        conversation = new Conversation();
+        conversation.user = user;
+        await this.conversationRepo
+          .getEntityManager()
+          .persistAndFlush(conversation);
+      }
+    } else {
+      // Create new conversation
+      conversation = new Conversation();
+      conversation.user = user;
+      await this.conversationRepo
+        .getEntityManager()
+        .persistAndFlush(conversation);
+    }
+
+    // Create and save the message
+    const message = new Message();
+    message.role = role;
+    message.content = content;
+    message.conversation = conversation;
+    message.user = user;
+
+    await this.messageRepo.getEntityManager().persistAndFlush(message);
+
+    // Auto-generate title for conversation if it's the first user message and no title exists
+    if (role === 'user' && !conversation.title) {
+      const messageCount = await this.messageRepo.count({
+        conversation: conversation.id,
+        user: userId,
+      });
+
+      if (messageCount === 1) {
+        // Generate title from first 50 characters of the first message
+        const title =
+          content.length > 50 ? content.substring(0, 50) + '...' : content;
+        conversation.title = title;
+        await this.conversationRepo
+          .getEntityManager()
+          .persistAndFlush(conversation);
+      }
+    }
+
+    return conversation.id;
   }
 }
