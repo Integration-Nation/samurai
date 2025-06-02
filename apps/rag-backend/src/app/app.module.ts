@@ -11,14 +11,21 @@ import { RerankingModule } from '../reranking/reranking.module';
 import { EmbeddingsModule } from '../embeddings/embeddings.module';
 import { GoogleDriveModule } from '../google-drive/google-drive.module';
 import { ConfigModule } from '@nestjs/config';
+<<<<<<< Updated upstream
 import Joi from 'joi';
 import config from '../config/config';
 import { AuthModule } from '../auth/auth.module';
+=======
+import { NotionModule } from '../notion/notion.module';
+
+
+>>>>>>> Stashed changes
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+<<<<<<< Updated upstream
       load: [config],
       validationSchema: Joi.object({
         GOOGLE_CLIENT_ID: Joi.string().required(),
@@ -28,6 +35,9 @@ import { AuthModule } from '../auth/auth.module';
       }),
     }),
     AuthModule,
+=======
+    }),
+>>>>>>> Stashed changes
     UsersModule,
     DatabaseModule,
     DocumentModule,
@@ -36,6 +46,7 @@ import { AuthModule } from '../auth/auth.module';
     RerankingModule,
     EmbeddingsModule,
     GoogleDriveModule,
+    NotionModule
   ],
   controllers: [AppController],
   providers: [AppService, RagService],
