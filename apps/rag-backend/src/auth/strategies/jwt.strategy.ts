@@ -1,4 +1,4 @@
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ExtractJwt, Strategy, JwtFromRequestFunction } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
@@ -25,25 +25,29 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new Error('JWT secret is not defined in configuration.');
     }
 
-    const extractJwtFromCookie = (req: Request) => {
-      let token = null;
-      if (req && req.cookies) {
-        token = req.cookies['access_token'];
-      }
-      return token || ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+    // Support both cookie and Authorization header
+    const cookieAndAuthHeaderExtractor: JwtFromRequestFunction = (
+      req: Request
+    ) => {
+      return (
+        req?.cookies?.['access_token'] ||
+        ExtractJwt.fromAuthHeaderAsBearerToken()(req)
+      );
     };
 
     super({
+      jwtFromRequest: cookieAndAuthHeaderExtractor,
       ignoreExpiration: false,
       secretOrKey: jwtSecret,
-      jwtFromRequest: extractJwtFromCookie,
     });
   }
 
   async validate(payload: JwtPayload) {
     const user = await this.userRepository.findOne({ id: payload.sub });
 
-    if (!user) throw new UnauthorizedException('Please log in to continue');
+    if (!user) {
+      throw new UnauthorizedException('Please log in to continue');
+    }
 
     return {
       id: payload.sub,

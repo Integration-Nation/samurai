@@ -15,9 +15,10 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
 import { ModeToggle } from "./mode-toggle"
-import { GalleryVerticalEnd } from "lucide-react"
-import Image from "next/image"
 import { useTheme } from "next-themes"
+import { useAuth } from "./AuthProvider"
+import { LoginButton } from "./login-button"
+import { Logo } from "./logo"
 
 const components: { title: string; href: string; description: string }[] = [
   {
@@ -59,17 +60,13 @@ const components: { title: string; href: string; description: string }[] = [
 
 export function NavigationMenuBar() {
 
-    const { resolvedTheme } = useTheme()
-
   return (
 <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-2 bg-transparent">
 
     <NavigationMenu>
     <div className="flex justify-center gap-2 md:justify-start mr-4">
               <a href="#" className="flex items-center gap-1 font-medium">
-                  { resolvedTheme === "dark" ?  <img className="size-12" src="samur-logo-dark.png" />
-                  : <img className="size-12" src="samur-logo.png" />
-                  }
+                  <Logo/>
                 SAMUR.AI
               </a>
             </div>
@@ -124,19 +121,13 @@ export function NavigationMenuBar() {
           </NavigationMenuContent>
         </NavigationMenuItem>
         <NavigationMenuItem>
-          <Link href="/login" legacyBehavior passHref>
-            <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-              Login
-            </NavigationMenuLink>
-          </Link>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
           <Link href="/chat" legacyBehavior passHref>
             <NavigationMenuLink className={navigationMenuTriggerStyle()}>
               RAG AI Interface
             </NavigationMenuLink>
           </Link>
         </NavigationMenuItem>
+        <LoginButton/>
       </NavigationMenuList>
     </NavigationMenu>
     <ModeToggle/>
