@@ -21,7 +21,7 @@ import { PDFDocument } from './entities/pdf.entity';
 import { TXTDocument } from './entities/txt.entity';
 import { DOCXDocument } from './entities/docx.entity';
 
-type PDFData = {
+export type PDFData = {
   fileName: string;
   text: string;
   numPages: number;

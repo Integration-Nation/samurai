@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, PrimaryKey, Property, Index } from '@mikro-orm/core';
 
 import { v4 } from 'uuid';
 
@@ -15,6 +15,17 @@ export abstract class Document {
 
   @Property({ nullable: true })
   modDate?: string;
+
+  // Drive tracking felter
+  @Property({ nullable: true })
+  @Index()
+  driveFileId?: string;
+
+  @Property({ nullable: true })
+  driveModifiedTime?: Date;
+
+  @Property({ nullable: true })
+  driveMimeType?: string;
 
   @Property({ defaultRaw: 'now()' })
   createdAt: Date = new Date();

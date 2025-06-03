@@ -14,6 +14,9 @@ import { ConfigModule } from '@nestjs/config';
 import Joi from 'joi';
 import config from '../config/config';
 import { AuthModule } from '../auth/auth.module';
+import { DriveSyncTokenModule } from '../drive-sync-token/drive-sync-token.module';
+import { DriveSyncScheduler } from '../drive-sync-scheduler/drive-sync-scheduler.service';
+import { DriveSyncSchedulerModule } from '../drive-sync-scheduler/drive-sync-scheduler.module';
 
 @Module({
   imports: [
@@ -36,6 +39,8 @@ import { AuthModule } from '../auth/auth.module';
     RerankingModule,
     EmbeddingsModule,
     GoogleDriveModule,
+    DriveSyncTokenModule,
+    DriveSyncSchedulerModule,
   ],
   controllers: [AppController],
   providers: [AppService, RagService],

@@ -8,6 +8,7 @@ import { PDFDocument } from '../documents/entities/pdf.entity';
 import { DocumentVector } from '../vector-store/entities/document-vector.entity';
 import { TXTDocument } from '../documents/entities/txt.entity';
 import { DOCXDocument } from '../documents/entities/docx.entity';
+import { DriveSyncToken } from '../documents/entities/driveSyncToken.entity';
 
 //const isProd = process.env['NODE_ENV'] === 'production';
 
@@ -27,6 +28,7 @@ export const MIKROORM_CONFIG: MikroOrmModuleOptions = {
     DocumentVector,
     TXTDocument,
     DOCXDocument,
+    DriveSyncToken,
   ],
   extensions: [Migrator],
   debug: true,
