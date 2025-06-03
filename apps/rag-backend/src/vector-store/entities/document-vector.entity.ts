@@ -1,4 +1,10 @@
-import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
+import {
+  Entity,
+  Index,
+  ManyToOne,
+  PrimaryKey,
+  Property,
+} from '@mikro-orm/core';
 import { VectorType } from 'pgvector/mikro-orm';
 import { Document } from '../../documents/entities/document.entity';
 import { v4 } from 'uuid';
@@ -17,13 +23,15 @@ export class DocumentVector {
   @Property({ type: 'text' })
   content!: string;
 
-  @Property({ type: VectorType })
+  @Property({ type: VectorType, columnType: 'vector(1536)' })
+  @Index()
   embedding!: Vector;
 
   @ManyToOne(() => Document, { nullable: true })
-  document?: Document;
+  document!: Document;
 
   @Property()
+  @Index()
   type!: DocumentVectorType;
 
   @Property({ defaultRaw: 'now()' })

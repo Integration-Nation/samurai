@@ -222,11 +222,12 @@
         },
         "embedding": {
           "name": "embedding",
-          "type": "vector",
+          "type": "vector(1536)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 1536,
           "mappedType": "unknown"
         },
         "document_uuid": {
@@ -275,6 +276,26 @@
       "name": "document_vector",
       "schema": "public",
       "indexes": [
+        {
+          "columnNames": [
+            "embedding"
+          ],
+          "composite": false,
+          "keyName": "document_vector_embedding_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "type"
+          ],
+          "composite": false,
+          "keyName": "document_vector_type_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
         {
           "keyName": "document_vector_pkey",
           "columnNames": [
@@ -444,6 +465,16 @@
       "schema": "public",
       "indexes": [
         {
+          "columnNames": [
+            "user_id"
+          ],
+          "composite": false,
+          "keyName": "conversation_user_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
           "keyName": "conversation_pkey",
           "columnNames": [
             "id"
@@ -502,16 +533,6 @@
           "nullable": false,
           "mappedType": "text"
         },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamptz",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "length": 6,
-          "mappedType": "datetime"
-        },
         "conversation_id": {
           "name": "conversation_id",
           "type": "varchar(255)",
@@ -531,11 +552,31 @@
           "nullable": false,
           "length": 255,
           "mappedType": "string"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamptz",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 6,
+          "mappedType": "datetime"
         }
       },
       "name": "message",
       "schema": "public",
       "indexes": [
+        {
+          "columnNames": [
+            "user_id"
+          ],
+          "composite": false,
+          "keyName": "message_user_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
         {
           "keyName": "message_pkey",
           "columnNames": [

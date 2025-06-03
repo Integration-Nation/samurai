@@ -8,7 +8,7 @@ import {
   DocumentVectorType,
 } from '../vector-store/entities/document-vector.entity';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
+import { EntityRepository, t } from '@mikro-orm/postgresql';
 import { Conversation } from './entities/conversation.entity';
 import { Message } from './entities/message.entity';
 import { User } from '../users/entities/user.entity';
@@ -18,6 +18,10 @@ export type CohereRerankChunk = {
   score: number;
   text: string;
   type: DocumentVectorType;
+  document: {
+    uuid: string;
+    fileName: string;
+  };
 };
 
 export type SytemPromptContent = {
@@ -64,7 +68,7 @@ export class RagService {
         text: `You are a helpful assistant. Use the following context to answer the user's question. 
                   If the context doesn't contain relevant information, acknowledge that and provide a 
                   general response based on your knowledge. Repsond in the same language as the user prompt.
-                  
+
                   Context:
                   ${cleanContextText}`,
       },
@@ -91,7 +95,8 @@ export class RagService {
   async *generateResponseStream(
     prompt: string,
     relevantChunks: CohereRerankChunk[],
-    imageBase64?: string
+    imageBase64?: string,
+    filename?: string
   ): AsyncGenerator<string, void, unknown> {
     const cleanContextText = relevantChunks
       .map((doc) => doc.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
@@ -104,6 +109,13 @@ export class RagService {
         text: `You are a helpful assistant. Use the following context to answer the user's question. 
                   If the context doesn't contain relevant information, acknowledge that and provide a 
                   general response based on your knowledge. Respond in the same language as the user prompt.
+                  
+                  ${
+                    filename &&
+                    'here is the filename of the top document used: ' +
+                      filename +
+                      ' end the response with this filename as a source in an italic font style, starting with "Source: ".'
+                  }
                   
                   Context:
                   ${cleanContextText}`,
@@ -179,12 +191,13 @@ export class RagService {
       const similarTexts = await this.similaritySeachText(prompt);
       const similarImages = await this.similaritySeachImages(prompt);
 
-      similarTexts.forEach((doc) => {
+      similarTexts.forEach(async (doc) => {
         console.log('Document Type:', doc.type);
       });
 
       similarImages.forEach((doc) => {
         console.log('Document Type:', doc.type);
+        console.log('Original document:', doc.document);
       });
 
       const rerankedResults = await this.rerankingService.rerankResults(
@@ -194,7 +207,7 @@ export class RagService {
         15
       );
 
-      console.log('Reranked Results:', rerankedResults);
+      // console.log('Reranked Results:', rerankedResults);
 
       const filteredTextResults = rerankedResults.filter(
         (result) => result.type === DocumentVectorType.TEXT
@@ -203,11 +216,14 @@ export class RagService {
         (result) => result.type === DocumentVectorType.IMAGE
       );
 
+      const topSourceName = rerankedResults[0]?.document.fileName;
+
       // Use the streaming generateResponse method
       for await (const chunk of this.generateResponseStream(
         prompt,
         filteredTextResults,
-        filteredImageResults[0]?.text
+        filteredImageResults[0]?.text,
+        topSourceName
       )) {
         yield chunk;
       }
