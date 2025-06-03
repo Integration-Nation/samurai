@@ -8,12 +8,14 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Conversation } from './entities/conversation.entity';
 import { Message } from './entities/message.entity';
 import { User } from '../users/entities/user.entity';
+import { DocumentModule } from '../documents/document.module';
 
 @Module({
   imports: [
     RerankingModule,
     EmbeddingsModule,
     VectorStoreModule,
+    DocumentModule,
     MikroOrmModule.forFeature([Conversation, Message, User]),
   ],
   controllers: [RagController],

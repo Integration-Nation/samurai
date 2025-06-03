@@ -65,6 +65,10 @@ export class DocumentProcessorService {
     return this.documentRepository.findAll();
   }
 
+  async findById(id: string): Promise<Document | null> {
+    return this.documentRepository.findOne({ uuid: id });
+  }
+
   async savePdfDocument(pdf: PDFData): Promise<PDFDocument> {
     const pdfDocument = new PDFDocument(); // 👈 explicitly create subclass instance
     Object.assign(pdfDocument, pdf); // ✅ assign data
