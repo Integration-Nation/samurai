@@ -11,7 +11,7 @@ export class Message {
   @Property()
   role!: 'user' | 'assistant' | 'system';
 
-  @Property()
+  @Property({ type: 'text' })
   content!: string;
 
   @Property()

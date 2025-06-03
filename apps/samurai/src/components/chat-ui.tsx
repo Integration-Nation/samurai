@@ -143,7 +143,10 @@ export default function ChatUI(props: ChatUIProps) {
       if (response.ok) {
         setConversations(prev => prev.filter(conv => conv.id !== conversationId))
         if (currentConversationId === conversationId) {
-          createNewConversation()
+          // If we're deleting the current conversation, start a new one
+          setCurrentConversationId(null)
+          setMessages([])
+          setInput("")
         }
       } else if (response.status === 401) {
         console.error("Authentication failed")
@@ -249,11 +252,21 @@ export default function ChatUI(props: ChatUIProps) {
               if (parsed.conversationId && !currentConversationId) {
                 newConversationId = parsed.conversationId
                 setCurrentConversationId(parsed.conversationId)
-                loadConversations() // Refresh conversations list
+                
+                // Add the new conversation to the list immediately with a title
+                const newConversation: Conversation = {
+                  id: parsed.conversationId,
+                  title: currentInput.length > 50 ? currentInput.substring(0, 50) + '...' : currentInput,
+                  createdAt: new Date().toISOString()
+                }
+                
+                setConversations(prev => [newConversation, ...prev])
               }
 
               // Handle completion
               if (parsed.done) {
+                // Refresh conversations list to get updated titles from backend
+                await loadConversations()
                 break
               }
             } catch (err) {
@@ -322,27 +335,29 @@ export default function ChatUI(props: ChatUIProps) {
               <div
                 key={conversation.id}
                 className={cn(
-                  "group flex items-center justify-between rounded-md p-3 cursor-pointer hover:bg-muted/50 transition-colors text-sm border border-transparent",
+                  "group flex items-start gap-3 rounded-md p-3 cursor-pointer hover:bg-muted/50 transition-colors text-sm border border-transparent min-h-[44px] relative",
                   currentConversationId === conversation.id && "bg-muted border-border"
                 )}
                 onClick={() => selectConversation(conversation.id)}
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <div className="truncate">
+                <div className="shrink-0">
+                  <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5" />
+                </div>
+                <div className="flex-1 min-w-0 pr-8">
+                  <div className="line-clamp-2 text-sm leading-relaxed">
                     {conversation.title || "New Conversation"}
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 shrink-0"
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 h-7 w-7 p-0 shrink-0 transition-opacity bg-background/80 hover:bg-background border border-border/50"
                   onClick={(e) => {
                     e.stopPropagation()
                     deleteConversation(conversation.id)
                   }}
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
             ))}
@@ -376,7 +391,7 @@ export default function ChatUI(props: ChatUIProps) {
         {/* Chat Component */}
         <div className="flex-1 min-h-0">
           <Chat
-            className="h-full px-48"
+            className="h-full xl:px-48 lg:px-36 md:px-16 px-4 py-4"
             messages={convertedMessages}
             handleSubmit={handleSubmit}
             input={input}
