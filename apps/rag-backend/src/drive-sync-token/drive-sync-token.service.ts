@@ -6,6 +6,7 @@ import { drive_v3, google } from 'googleapis';
 import { DocumentProcessorService } from '../documents/document-processor.service';
 import { streamToBuffer } from '../google-drive/google-drive.service';
 import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityManager } from '@mikro-orm/core';
 
 @Injectable()
 export class DriveSyncTokenService implements OnModuleInit {
@@ -39,29 +40,29 @@ export class DriveSyncTokenService implements OnModuleInit {
   }
 
   async syncRecentChanges(): Promise<void> {
+    // Create a forked EntityManager for this specific context
+    const em = this.driveSyncTokenRepository.getEntityManager().fork();
+
     // Find eksisterende token
-    const tokens = await this.driveSyncTokenRepository.findAll();
+    const tokens = await em.find(DriveSyncToken, {});
     let tokenEntity = tokens[0];
+
     if (!tokenEntity) {
       this.logger.warn('No startPageToken found, creating a new one...');
       const newToken = await this.getStartPageToken();
-      tokenEntity = this.driveSyncTokenRepository.create({ token: newToken });
-      await this.driveSyncTokenRepository
-        .getEntityManager()
-        .persistAndFlush(tokenEntity);
+      tokenEntity = em.create(DriveSyncToken, { token: newToken });
+      await em.persistAndFlush(tokenEntity);
       this.logger.log('New startPageToken saved to database.');
       return;
     }
 
     try {
       // Hent ændringer fra Google Drive siden sidst gemte token
-      const newToken = await this.fetchChanges(tokenEntity.token);
+      const newToken = await this.fetchChanges(tokenEntity.token, em);
 
       if (newToken) {
         tokenEntity.token = newToken;
-        await this.driveSyncTokenRepository
-          .getEntityManager()
-          .persistAndFlush(tokenEntity);
+        await em.persistAndFlush(tokenEntity);
         this.logger.log('Updated startPageToken in database.');
       } else {
         this.logger.log('No new changes found since last sync.');
@@ -80,7 +81,10 @@ export class DriveSyncTokenService implements OnModuleInit {
     return res.data.startPageToken;
   }
 
-  private async fetchChanges(savedToken: string): Promise<string | null> {
+  private async fetchChanges(
+    savedToken: string,
+    em: EntityManager
+  ): Promise<string | null> {
     let pageToken = savedToken;
     let newStartPageToken: string | undefined;
 
@@ -97,8 +101,8 @@ export class DriveSyncTokenService implements OnModuleInit {
       for (const change of changes) {
         if (change.removed) {
           this.logger.log(`File deleted: ${change.fileId}`);
-          // Slet dokumentet fra databasen
-          await this.documentRepo.nativeDelete({ driveFileId: change.fileId });
+          // Slet dokumentet fra databasen using the forked EntityManager
+          await em.nativeDelete(Document, { driveFileId: change.fileId });
         } else if (change.fileId) {
           // Hent metadata for filen
           const fileMetadata = await this.drive.files.get({

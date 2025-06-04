@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Document } from './entities/document.entity';
-import { EntityRepository } from '@mikro-orm/postgresql';
+import { EntityRepository, EntityManager } from '@mikro-orm/postgresql';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import pdfParse from 'pdf-parse';
@@ -56,8 +56,6 @@ export class DocumentProcessorService {
   constructor(
     @InjectRepository(Document)
     private readonly documentRepository: EntityRepository<Document>,
-    @InjectRepository(DocumentVector)
-    private readonly vectorRepository: EntityRepository<DocumentVector>,
     private readonly embeddingsService: EmbeddingsService
   ) {}
 
@@ -65,33 +63,42 @@ export class DocumentProcessorService {
     return this.documentRepository.findAll();
   }
 
-  async savePdfDocument(pdf: PDFData): Promise<PDFDocument> {
+  async savePdfDocument(
+    pdf: PDFData,
+    em?: EntityManager
+  ): Promise<PDFDocument> {
+    const entityManager =
+      em || this.documentRepository.getEntityManager().fork();
     const pdfDocument = new PDFDocument(); // 👈 explicitly create subclass instance
     Object.assign(pdfDocument, pdf); // ✅ assign data
 
-    await this.documentRepository
-      .getEntityManager()
-      .persistAndFlush(pdfDocument);
+    await entityManager.persistAndFlush(pdfDocument);
     return pdfDocument;
   }
 
-  async saveTxtDocument(txt: TXTData): Promise<TXTDocument> {
+  async saveTxtDocument(
+    txt: TXTData,
+    em?: EntityManager
+  ): Promise<TXTDocument> {
+    const entityManager =
+      em || this.documentRepository.getEntityManager().fork();
     const txtDocument = new TXTDocument();
     Object.assign(txtDocument, txt);
 
-    await this.documentRepository
-      .getEntityManager()
-      .persistAndFlush(txtDocument);
+    await entityManager.persistAndFlush(txtDocument);
     return txtDocument;
   }
 
-  async saveDocxDocument(docx: DOCXData): Promise<DOCXDocument> {
+  async saveDocxDocument(
+    docx: DOCXData,
+    em?: EntityManager
+  ): Promise<DOCXDocument> {
+    const entityManager =
+      em || this.documentRepository.getEntityManager().fork();
     const docxDocument = new DOCXDocument();
     Object.assign(docxDocument, docx);
 
-    await this.documentRepository
-      .getEntityManager()
-      .persistAndFlush(docxDocument);
+    await entityManager.persistAndFlush(docxDocument);
     return docxDocument;
   }
 
@@ -146,9 +153,12 @@ export class DocumentProcessorService {
   }
 
   async processPdf(fileBuffer: Buffer, fileName: string): Promise<void> {
+    // Create a forked EntityManager for this context
+    const em = this.documentRepository.getEntityManager().fork();
+
     const pdfData = await this.readPDF(fileBuffer, fileName);
 
-    const document = await this.savePdfDocument(pdfData);
+    const document = await this.savePdfDocument(pdfData, em);
 
     if (pdfData.text && pdfData.text.length > 100) {
       const text = pdfData.text;
@@ -171,7 +181,7 @@ export class DocumentProcessorService {
         documentVector.document = document;
         documentVector.type = DocumentVectorType.TEXT;
 
-        this.vectorRepository.getEntityManager().persist(documentVector);
+        em.persist(documentVector);
       }
     }
 
@@ -192,17 +202,20 @@ export class DocumentProcessorService {
           documentVector.document = document;
           documentVector.type = DocumentVectorType.IMAGE;
 
-          this.vectorRepository.getEntityManager().persist(documentVector);
+          em.persist(documentVector);
         }
       }
     }
 
-    await this.vectorRepository.getEntityManager().flush();
+    await em.flush();
   }
 
   async processTxt(file: Express.Multer.File): Promise<void> {
+    // Create a forked EntityManager for this context
+    const em = this.documentRepository.getEntityManager().fork();
+
     const txtData = await this.readTXT(file);
-    const document = await this.saveTxtDocument(txtData);
+    const document = await this.saveTxtDocument(txtData, em);
     const splitter = new RecursiveCharacterTextSplitter({
       chunkSize: 1000,
       chunkOverlap: 200,
@@ -220,15 +233,18 @@ export class DocumentProcessorService {
       documentVector.document = document;
       documentVector.type = DocumentVectorType.TEXT;
 
-      this.vectorRepository.getEntityManager().persist(documentVector);
+      em.persist(documentVector);
     }
-    await this.vectorRepository.getEntityManager().flush();
+    await em.flush();
   }
 
   async processDOCX(file: Express.Multer.File): Promise<void> {
+    // Create a forked EntityManager for this context
+    const em = this.documentRepository.getEntityManager().fork();
+
     const docxData = await this.readDOCX(file);
 
-    const document = await this.saveDocxDocument(docxData);
+    const document = await this.saveDocxDocument(docxData, em);
 
     //ændr til smartere error handling for dokumenter som f.eks kun indeholder \n
     if (docxData.text && docxData.text.length > 100) {
@@ -252,7 +268,7 @@ export class DocumentProcessorService {
         documentVector.document = document;
         documentVector.type = DocumentVectorType.TEXT;
 
-        this.vectorRepository.getEntityManager().persist(documentVector);
+        em.persist(documentVector);
       }
     }
 
@@ -271,12 +287,12 @@ export class DocumentProcessorService {
           documentVector.document = document;
           documentVector.type = DocumentVectorType.IMAGE;
 
-          this.vectorRepository.getEntityManager().persist(documentVector);
+          em.persist(documentVector);
         }
       }
     }
 
-    await this.vectorRepository.getEntityManager().flush();
+    await em.flush();
   }
 
   async extractImagesViaPdfimages(fileBuffer: Buffer): Promise<Buffer[]> {
