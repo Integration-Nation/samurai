@@ -4,7 +4,6 @@ import * as React from "react"
 import Link from "next/link"
 
 import { cn } from "@/lib/utils"
-// import { Icons } from "@/components/icons"
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -15,9 +14,9 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
 import { ModeToggle } from "./mode-toggle"
-import { GalleryVerticalEnd } from "lucide-react"
-import Image from "next/image"
-import { useTheme } from "next-themes"
+import { LoginButton } from "./login-button"
+import { Logo } from "./logo"
+import { useAuth } from "./AuthProvider"
 
 const components: { title: string; href: string; description: string }[] = [
   {
@@ -58,88 +57,100 @@ const components: { title: string; href: string; description: string }[] = [
 ]
 
 export function NavigationMenuBar() {
-
-    const { resolvedTheme } = useTheme()
-
+      const { user, logout } = useAuth();
   return (
-<div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-2 bg-transparent">
-
-    <NavigationMenu>
-    <div className="flex justify-center gap-2 md:justify-start mr-4">
-              <a href="#" className="flex items-center gap-1 font-medium">
-                  { resolvedTheme === "dark" ?  <img className="size-12" src="samur-logo-dark.png" />
-                  : <img className="size-12" src="samur-logo.png" />
-                  }
-                SAMUR.AI
-              </a>
-            </div>
-      <NavigationMenuList>
-        <NavigationMenuItem>
-          <NavigationMenuTrigger>Getting started</NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-              <li className="row-span-3">
-                <NavigationMenuLink asChild>
-                  <Link
-                    className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
-                    href="/"
-                  >
-                    {/* <Icons.logo className="h-6 w-6" /> */}
-                    <div className="mb-2 mt-4 text-lg font-medium">
-                      shadcn/ui
-                    </div>
-                    <p className="text-sm leading-tight text-muted-foreground">
-                      Beautifully designed components built with Radix UI and
-                      Tailwind CSS.
-                    </p>
-                  </Link>
+    <div className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 py-3 bg-transparent">
+      <div className="flex items-center">
+        <NavigationMenu>
+          <div className="flex items-center gap-2 mr-6">
+            <Link href="/" className="flex items-center gap-2 font-semibold text-lg hover:opacity-80 transition-opacity">
+              <Logo />
+              SAMUR.AI
+            </Link>
+          </div>
+          
+          <NavigationMenuList>
+            <NavigationMenuItem>
+              <NavigationMenuTrigger className="text-sm">Getting started</NavigationMenuTrigger>
+              <NavigationMenuContent>
+                <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                  <li className="row-span-3">
+                    <NavigationMenuLink asChild>
+                      <Link
+                        className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md hover:bg-muted/80 transition-colors"
+                        href="/"
+                      >
+                        <div className="mb-2 mt-4 text-lg font-medium">
+                          SAMUR.AI
+                        </div>
+                        <p className="text-sm leading-tight text-muted-foreground">
+                          Advanced AI-powered conversation interface with document processing capabilities.
+                        </p>
+                      </Link>
+                    </NavigationMenuLink>
+                  </li>
+                  <ListItem href="/docs" title="Introduction">
+                    Get started with SAMUR.AI and explore its features.
+                  </ListItem>
+                  <ListItem href="/docs/installation" title="Setup Guide">
+                    Learn how to set up and configure your AI assistant.
+                  </ListItem>
+                  <ListItem href="/docs/features" title="Features">
+                    Discover all the powerful features available.
+                  </ListItem>
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+            
+            <NavigationMenuItem>
+              <NavigationMenuTrigger className="text-sm">Features</NavigationMenuTrigger>
+              <NavigationMenuContent>
+                <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                  {components.map((component) => (
+                    <ListItem
+                      key={component.title}
+                      title={component.title}
+                      href={component.href}
+                    >
+                      {component.description}
+                    </ListItem>
+                  ))}
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+            
+            <NavigationMenuItem>
+              <Link href="/chat" legacyBehavior passHref>
+                <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-sm font-medium")}>
+                  AI Chat
                 </NavigationMenuLink>
-              </li>
-              <ListItem href="/docs" title="Introduction">
-                Re-usable components built using Radix UI and Tailwind CSS.
-              </ListItem>
-              <ListItem href="/docs/installation" title="Installation">
-                How to install dependencies and structure your app.
-              </ListItem>
-              <ListItem href="/docs/primitives/typography" title="Typography">
-                Styles for headings, paragraphs, lists...etc
-              </ListItem>
-            </ul>
-          </NavigationMenuContent>
-        </NavigationMenuItem>
+              </Link>
+            </NavigationMenuItem>
+            {!user ? (
         <NavigationMenuItem>
-          <NavigationMenuTrigger>Components</NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
-              {components.map((component) => (
-                <ListItem
-                  key={component.title}
-                  title={component.title}
-                  href={component.href}
-                >
-                  {component.description}
-                </ListItem>
-              ))}
-            </ul>
-          </NavigationMenuContent>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <Link href="/login" legacyBehavior passHref>
+          <Link href="/login" passHref legacyBehavior>
             <NavigationMenuLink className={navigationMenuTriggerStyle()}>
               Login
             </NavigationMenuLink>
           </Link>
         </NavigationMenuItem>
+      ) : (
         <NavigationMenuItem>
-          <Link href="/chat" legacyBehavior passHref>
-            <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-              RAG AI Interface
-            </NavigationMenuLink>
-          </Link>
+          <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+            <button onClick={logout} className="w-full text-left">
+              Logout
+            </button>
+          </NavigationMenuLink>
         </NavigationMenuItem>
-      </NavigationMenuList>
-    </NavigationMenu>
-    <ModeToggle/>
+      )}
+          </NavigationMenuList>
+        </NavigationMenu>
+      </div>
+
+      <div className="flex items-center gap-3">
+   
+        <ModeToggle />
+      </div>
     </div>
   )
 }
