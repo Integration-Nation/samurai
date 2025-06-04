@@ -15,8 +15,8 @@ import Joi from 'joi';
 import config from '../config/config';
 import { AuthModule } from '../auth/auth.module';
 import { DriveSyncTokenModule } from '../drive-sync-token/drive-sync-token.module';
-import { DriveSyncScheduler } from '../drive-sync-scheduler/drive-sync-scheduler.service';
 import { DriveSyncSchedulerModule } from '../drive-sync-scheduler/drive-sync-scheduler.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -30,6 +30,7 @@ import { DriveSyncSchedulerModule } from '../drive-sync-scheduler/drive-sync-sch
         JWT_SECRET: Joi.string().required(),
       }),
     }),
+    ScheduleModule.forRoot(),
     AuthModule,
     UsersModule,
     DatabaseModule,

@@ -9,7 +9,10 @@ export class DriveSyncScheduler {
 
   constructor(private readonly driveSynctokenService: DriveSyncTokenService) {}
 
-  @Cron('*/1 * * * *')
+  @Cron(CronExpression.EVERY_30_SECONDS, {
+    name: 'handleRegularSync',
+    timeZone: 'Europe/Copenhagen',
+  })
   async handleRegularSync() {
     try {
       this.logger.log('⏳ Starting regular Google Drive sync...');
