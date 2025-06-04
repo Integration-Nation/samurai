@@ -8,7 +8,7 @@ RUN apk add --no-cache poppler-utils
 WORKDIR /app
 
 # Copy root workspace files
-COPY package.json yarn.lock nx.json tsconfig.base.json tsconfig.json ./
+COPY package.json yarn.lock nx.json tsconfig.base.json tsconfig.json samurai-service-ac.json client_secret.json ./
 # Copy the root eslint config file
 COPY eslint.config.mjs ./
 

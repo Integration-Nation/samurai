@@ -18,13 +18,13 @@ export interface DriveFileContent {
 }
 
 // Type guard functions
-function isValidFile(
+export function isValidFile(
   file: drive_v3.Schema$File | null | undefined
 ): file is drive_v3.Schema$File {
   return Boolean(file && typeof file.id === 'string' && file.id.length > 0);
 }
 
-function sanitizeFileData(file: drive_v3.Schema$File): DriveFile {
+export function sanitizeFileData(file: drive_v3.Schema$File): DriveFile {
   return {
     id: file.id || '',
     name: file.name || 'Unknown File',
@@ -36,7 +36,7 @@ function sanitizeFileData(file: drive_v3.Schema$File): DriveFile {
 }
 
 // Helper function to convert stream to buffer
-async function streamToBuffer(stream: Readable): Promise<Buffer> {
+export async function streamToBuffer(stream: Readable): Promise<Buffer> {
   const chunks: Buffer[] = [];
 
   return new Promise((resolve, reject) => {

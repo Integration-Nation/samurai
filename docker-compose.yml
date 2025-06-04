@@ -30,8 +30,8 @@ services:
   #     POSTGRES_HOST: postgres
   #     POSTGRES_PORT: ${POSTGRES_PORT}
   #     DATABASE_TYPE: ${DATABASE_TYPE}
-  #     CHOKIDAR_USEPOLLING: "true"
-  #     WATCHPACK_POLLING: "true"
+  #     CHOKIDAR_USEPOLLING: 'true'
+  #     WATCHPACK_POLLING: 'true'
   #   command: yarn nx serve rag-backend --watch
   #   volumes:
   #     - .:/app

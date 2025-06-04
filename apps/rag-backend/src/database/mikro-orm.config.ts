@@ -8,6 +8,7 @@ import { PDFDocument } from '../documents/entities/pdf.entity';
 import { DocumentVector } from '../vector-store/entities/document-vector.entity';
 import { TXTDocument } from '../documents/entities/txt.entity';
 import { DOCXDocument } from '../documents/entities/docx.entity';
+import { DriveSyncToken } from '../documents/entities/driveSyncToken.entity';
 import { Message } from '../rag/entities/message.entity';
 import { Conversation } from '../rag/entities/conversation.entity';
 
@@ -29,6 +30,7 @@ export const MIKROORM_CONFIG: MikroOrmModuleOptions = {
     DocumentVector,
     TXTDocument,
     DOCXDocument,
+    DriveSyncToken,
     Message,
     Conversation,
   ],

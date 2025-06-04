@@ -21,6 +21,7 @@
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^10.0.2",
+    "@nestjs/schedule": "^6.0.0",
     "ai": "^4.3.16",
     "axios": "^1.6.0",
     "class-transformer": "^0.5.1",
