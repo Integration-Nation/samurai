@@ -4,7 +4,10 @@ import { Document } from '../documents/entities/document.entity';
 import { DriveSyncToken } from '../documents/entities/driveSyncToken.entity';
 import { drive_v3, google } from 'googleapis';
 import { DocumentProcessorService } from '../documents/document-processor.service';
-import { streamToBuffer } from '../google-drive/google-drive.service';
+import {
+  GoogleDriveService,
+  streamToBuffer,
+} from '../google-drive/google-drive.service';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityManager } from '@mikro-orm/core';
 
@@ -15,11 +18,10 @@ export class DriveSyncTokenService implements OnModuleInit {
 
   constructor(
     @InjectRepository(Document)
-    private readonly documentRepo: EntityRepository<Document>,
-
+    private readonly documentRepository: EntityRepository<Document>,
     @InjectRepository(DriveSyncToken)
     private readonly driveSyncTokenRepository: EntityRepository<DriveSyncToken>,
-
+    private readonly googleDriveService: GoogleDriveService,
     private readonly documentProcessorService: DocumentProcessorService
   ) {}
 
@@ -120,6 +122,19 @@ export class DriveSyncTokenService implements OnModuleInit {
             continue;
           }
 
+          const documentEm = this.documentRepository.getEntityManager().fork();
+
+          const existingDoc = await documentEm.findOne(Document, {
+            driveFileId: change.fileId,
+          });
+
+          if (existingDoc) {
+            this.logger.log(
+              `File ${name} already exists in database, skipping.`
+            );
+            continue;
+          }
+
           if (mimeType === 'application/pdf' || name.endsWith('.pdf')) {
             // Hent filindhold som stream
             const fileStreamResponse = await this.drive.files.get(
@@ -129,9 +144,23 @@ export class DriveSyncTokenService implements OnModuleInit {
 
             const fileBuffer = await streamToBuffer(fileStreamResponse.data);
 
-            // Processér PDF'en
-            await this.documentProcessorService.processPdf(fileBuffer, name);
+            await this.documentProcessorService.processPdf(
+              fileBuffer,
+              name,
+              change.fileId
+            );
             this.logger.log(`Processed PDF file: ${name}`);
+          } else if (mimeType === 'application/vnd.google-apps.document') {
+            const exportedBuffer = await this.googleDriveService.exportFile(
+              change.fileId,
+              'application/pdf'
+            );
+
+            this.documentProcessorService.processPdf(
+              exportedBuffer,
+              name,
+              change.fileId
+            );
           } else {
             this.logger.log(
               `File ${name} with mimeType ${mimeType} is not a PDF, skipping.`

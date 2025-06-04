@@ -7,5 +7,6 @@ import { DocumentModule } from '../documents/document.module';
   imports: [DocumentModule],
   providers: [GoogleDriveService],
   controllers: [GoogleDriveController],
+  exports: [GoogleDriveService],
 })
 export class GoogleDriveModule {}

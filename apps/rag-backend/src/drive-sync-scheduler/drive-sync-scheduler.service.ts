@@ -9,7 +9,7 @@ export class DriveSyncScheduler {
 
   constructor(private readonly driveSynctokenService: DriveSyncTokenService) {}
 
-  @Cron(CronExpression.EVERY_30_SECONDS, {
+  @Cron(CronExpression.EVERY_MINUTE, {
     name: 'handleRegularSync',
     timeZone: 'Europe/Copenhagen',
   })

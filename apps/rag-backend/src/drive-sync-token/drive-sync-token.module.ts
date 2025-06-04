@@ -7,11 +7,13 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Document } from '../documents/entities/document.entity';
 import { DriveSyncToken } from '../documents/entities/driveSyncToken.entity';
 import { DocumentModule } from '../documents/document.module';
+import { GoogleDriveModule } from '../google-drive/google-drive.module';
 
 @Module({
   imports: [
     MikroOrmModule.forFeature([Document, DriveSyncToken]),
     DocumentModule,
+    GoogleDriveModule,
   ],
 
   controllers: [DriveSyncController],

@@ -34,6 +34,7 @@ export type PDFData = {
   creationDate?: string;
   modDate?: string;
   images?: Uint8Array<ArrayBufferLike>[];
+  driveFileId?: string;
 };
 
 type TXTData = {
@@ -156,11 +157,19 @@ export class DocumentProcessorService {
     return docx;
   }
 
-  async processPdf(fileBuffer: Buffer, fileName: string): Promise<void> {
+  async processPdf(
+    fileBuffer: Buffer,
+    fileName: string,
+    driveFileId?: string
+  ): Promise<void> {
     // Create a forked EntityManager for this context
     const em = this.documentRepository.getEntityManager().fork();
 
     const pdfData = await this.readPDF(fileBuffer, fileName);
+
+    if (driveFileId) {
+      pdfData.driveFileId = driveFileId;
+    }
 
     const document = await this.savePdfDocument(pdfData, em);
 
